@@ -4,6 +4,11 @@
 
 The STL Data API project is a centralized, user-friendly platform designed to serve as a proxy for accessing and interacting with public data from various regional and municipal sources, with a focus on the St. Louis region. The project addresses challenges such as inconsistent data formats, lack of standardization, and repetitive efforts in compiling datasets by providing a RESTful API and a foundation for a future web portal. It is built using a CQRS (Command Query Responsibility Segregation) architecture with microservices, leveraging modern technologies for scalability and maintainability.
 
+**Technical Overview**
+
+- [How Data Flows](/docs/data_flow_explained.md)
+
+
 **Project Flow**
 
 1. Data Ingestion: Fetch raw data (Excel, PDF, JSON, or web content) from public St. Louis data sources.
