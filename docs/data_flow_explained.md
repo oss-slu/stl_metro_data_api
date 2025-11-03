@@ -86,6 +86,7 @@ For now, the system runs with local Flask services pointed at host-mapped Postgr
                           |
                           v
                         Clients
+```
 
 ## Pseudocode Sketch
 ```python
