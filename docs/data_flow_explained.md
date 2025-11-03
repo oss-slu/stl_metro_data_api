@@ -60,6 +60,7 @@ If the Flask services run inside Docker, PG_HOST must be set to the Docker servi
 For now, the system runs with local Flask services pointed at host-mapped Postgres.
 
 ## Text Flow Diagram
+```text
 [Data Sources]
   Excel      JSON/Web      PDF(* incomplete)
      |           |              |
