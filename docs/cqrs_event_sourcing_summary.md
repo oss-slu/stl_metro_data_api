@@ -2,7 +2,7 @@
 
 ### What is CQRS and Why it Matters
 
-**CQRS(Command Query Responsibility Segregation)** separates write operations(commands) from read oeprations(queries).
+**CQRS(Command Query Responsibility Segregation)** separates write operations (commands) from read operations (queries).
 Why it matters:
 
 - Read and write operations have different performance needs
