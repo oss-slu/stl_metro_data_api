@@ -13,6 +13,8 @@ The STL Data API project is a centralized, user-friendly platform designed to se
 5. API Access: Expose RESTful endpoints (via Flask) for querying data, with Open API documentation.
 6. Future Features: Add user subscriptions, web portal, and advanced optimizations.
 
+Archetecture overview diagram here: docs/architecture_overview.png
+
 **Tech Stack**
 
 - Python 3.10+: Core language for data processing and API development.
