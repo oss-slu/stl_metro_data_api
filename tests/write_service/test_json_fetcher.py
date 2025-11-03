@@ -17,6 +17,5 @@ def test_city_json():
     url = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
     result = get_json(url)
 
-    # If the response is a valid Python list of dictionaries, then the JSON data was sucessfully retrieved and parsed
-    assert isinstance(result, list), "Result is not a list"
-    assert all(isinstance(item, dict) for item in result), "Not all items inside the list are dictionaries!"
+    # If the response is a valid Python list or dictionary, then the JSON data was sucessfully retrieved and parsed
+    assert isinstance(result, (list, dict)), "Parsed result is not a list or dictionary"

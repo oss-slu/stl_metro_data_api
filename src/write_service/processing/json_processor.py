@@ -12,17 +12,46 @@ schema = {
     }
 }
 
-def send_data(raw_list):
+def clean_data(raw_data):
+    """
+    This function ensures that the data to be sent is in a standardized format:
+    a list of dictionaries, where each dictionary is an entity.
+    """
+
+    result = []
+
+    # Convert into list of Python dictionaries
+    if isinstance(raw_data, dict):
+        # One entity = wrap dictionary in list
+        result = [raw_data]
+    elif isinstance(raw_data, list):
+        # Otherwise if list of entities, make sure they are all dictionaries
+        for item in raw_data:
+            if isinstance(item, dict):
+                result.append(item)
+            else:
+                # Wrap non-dictionaries into a dictionary
+                result.append({"data": item})
+    else:
+        # Wrap single data value in a list of a dictionary
+        result = [{"data": raw_data}]
+    
+    return result
+
+def send_data(raw_data):
     """This function checks if the data passes the schema and then sends the data to Kafka."""
 
+    # Clean the data first
+    data = clean_data(raw_data)
+
     # No data received
-    if not raw_list:
+    if not data:
         logging.error("No data to send!")
         return "No data to send to Kafka!"
 
     # Make sure data in right format (schema)
     try:
-        validate(instance=raw_list, schema=schema)
+        validate(instance=data, schema=schema)
     except ValidationError as error:
         logging.error("Failed to send to Kafka. Data is not in valid format!\n" + str(error.message))
         return "Failed to send to Kafka. Data is not in valid format! <br> Error: <br>" + str(error.message)
@@ -39,10 +68,10 @@ def send_data(raw_list):
                 request_timeout_ms=10000,
                 reconnect_backoff_ms=1000
             )
-            producer.send("JSON-data", raw_list)
+            producer.send("JSON-data", data)
             producer.flush()
-            logging.info("Sent JSON data to Kafka: " + str(raw_list))
-            return "Sent data to Kafka successfully!<br>" + "Topic: JSON data<br>" + "Data:<br>" + str(raw_list)
+            logging.info("Sent JSON data to Kafka: " + str(data))
+            return "Sent data to Kafka successfully!<br>" + "Topic: JSON data<br>" + "Data:<br>" + str(data)
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
             logging.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")

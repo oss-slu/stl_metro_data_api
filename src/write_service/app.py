@@ -16,7 +16,8 @@ def main():
 @app.route('/json', strict_slashes = False)
 def test_json():
     """
-    Test function that pulls sample JSON data from the City of St. Louis website and then displays it to the user.
+    Test function that pulls sample JSON data from the City of St. Louis website, parses it,
+    sends it to Kafka, and then displays the results to the user.
     """
 
     # Grab and parse data from URL, also send to Kafka
@@ -38,7 +39,7 @@ def test_json():
                     <b>Kafka Status:</b><br>
                     {kafka_status}
                 <hr><br>
-                <b>Formatted JSON data received from website:</b>
+                <b>JSON data received from website (not cleaned yet):</b>
                 <pre>{formattedResult}</pre>
                 </p>
             </body>

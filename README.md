@@ -72,6 +72,10 @@ stl_metro_dat_api/
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
 
+## Getting Started with Contributions
+
+Thank you so much for wanting to contribute to our project! Please see the [Contribution Guide](/docs/CONTRIBUTOR_JOURNEY_MAP.md) on how you can help.
+
 ## Testing
 
 - Run unit tests: `pytest tests/`.
