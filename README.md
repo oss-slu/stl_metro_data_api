@@ -77,6 +77,20 @@ stl_metro_dat_api/
 - Run unit tests: `pytest tests/`.
 - Check connectivity: `python tests/basic_test.py`.
 
+## Technical Overview
+
+The STL Metro Data API uses CQRS architecture to separate data collection (write operations) from data serving (read operations).
+
+**Key Architectural Patterns:**
+
+- [CQRS and Event Sourcing](/docs/cqrs_event_sourcing_summary.md) - Explains how we use Kafka to separate write and read operations
+
+**System Components:**
+
+- Write Service: Data ingestion and processing
+- Kafka: Event streaming and message queue
+- Read Service: PostgreSQL database and Flask API
+
 ## Contact
 
 For questions, reach out to the Tech Lead via Slack or GitHub Issues. Report bugs or suggest features in the Issues tab.
