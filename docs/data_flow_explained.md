@@ -10,31 +10,16 @@ Input goal: accept raw files or payloads, normalize their structure, and publish
 
 ## Kafka Topics (ingestion + processing)
 Exact topic strings present in code:  
-Excel processed: excel-porcessed-topic  
-Note: spelled “porcessed” in code.  
+Excel processed: excel-processed-topic   
 JSON processed: JSON-data  
 Web processed: web-processed-topic  
-PDF processed: not set yet
+PDF processed: pdf-processed-topic
 
 ## PostgreSQL (write and read separation)
-Single Postgres container in docker-compose.yml:  
-image: postgres:14  
-POSTGRES_DB: stl_data  
-POSTGRES_USER: postgres  
-POSTGRES_PASSWORD: ${PG_PASSWORD}  
-ports: ${PG_PORT}:5432  
-volumes include ../config/pg_init.sql  
-
 read_service DB connection (from read_service/app.py) uses environment variables:  
 PG_HOST, PG_PORT, PG_DB, PG_USER, PG_PASSWORD  
 Engine URL: postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}
-
-.env includes:  
-PG_HOST=127.0.0.1  
-PG_PORT=5433  
-PG_DB=stl_data  
-PG_USER=postgres  
-
+ 
 Conclusion: CQRS is logical only right now. Both write and read paths target the same physical PostgreSQL instance.  
 If a true split is added later, separate URLs (e.g., WRITE_DATABASE_URL and READ_DATABASE_URL) should be used.
 
@@ -62,15 +47,15 @@ For now, the system runs with local Flask services pointed at host-mapped Postgr
 ## Text Flow Diagram
 ```text
 [Data Sources]
-  Excel      JSON/Web      PDF(* incomplete)
+  Excel      JSON/Web          PDF
      |           |              |
      v           v              v
 [Ingestion + Processing Services]
-  excel_processor     json_processor     pdf_processor(*)
+  excel_processor     json_processor     pdf_processor
      |                     |                  |
      v                     v                  v
                   [Kafka Topics]
-  "excel-porcessed-topic"   "JSON-data"   "web-processed-topic"   (PDF topic *)
+  "excel-porcessed-topic"   "JSON-data"   "web-processed-topic"   "pdf-processed-topic"
                           |
                           v
                  [Write Path / Consumer]
@@ -101,7 +86,8 @@ def ingest_json(payload):
 def ingest_web(payload):
     producer.send("web-processed-topic", serialize(normalize(payload)))
 
-# TODO(pdf)
+def ingest_pdf(payload):
+    producer.send("pdf-processed-topic", serialize(normalize(payload)))
 
 # consumer / write path
 def on_kafka_record(topic, record):
