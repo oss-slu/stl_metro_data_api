@@ -1,0 +1,67 @@
+<html>
+    <head>
+        <title>STL Metro Data API</title>
+        <style>
+            .header {
+                font-weight: bold;
+                padding: 20px;
+                background-color: beige;
+            }
+
+            .details {
+                padding: 10px;
+                background-color: lightgreen;
+            }
+
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14pt;
+                padding: auto;
+            }
+
+            h1 {
+                color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>STL Metro Data API</h1>
+        <br>
+        <div>
+            <div class="header">What is this project?</div>
+            <p>
+                The purpose of our project is to unify data about the City of St. Louis from a variety of sources and have a 
+                single, easy place for people to access this data. That way we all can make better informed decisions.
+            </p>
+        </div>
+        <br>
+
+        <div>
+            <div class="header">Where is the data sourced from?</div>
+            <p>
+                Currently, our data is sourced from <a href="https://data.stlouis-mo.gov/">The City of St. Louis Open Data</a> website.
+            </p>
+        </div>
+        <br>
+
+        <div>
+            <div class="header">How do developers use this project?</div>
+            <p>
+                Once you run our project, you can go <a href="http://localhost:5001/swagger">http://localhost:5001/swagger</a> to access our API endpoints.
+            </p>
+        </div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <footer>
+            <hr>
+            <p>
+                <span id="year"></span> SLU Open Source <br>
+                <script>document.getElementById("year").innerHTML = new Date().getFullYear();</script>
+            </p>
+        </footer>
+    </body>
+</html>

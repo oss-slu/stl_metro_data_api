@@ -168,6 +168,12 @@ pytest tests/
 - Expected: All tests pass (initially, only connectivity tests exist).
 - If tests fail, check error messages and ensure Docker services are up.
 
+### 10. Secondary Front-end (Excellence Project)
+To run the secondary front-end (excellence project):
+   - Go to the `frontend` folder in your terminal.
+   - Run `python -m http.server 9000`
+   - Go to `http://localhost:9000` in your web browser.
+   
 ## Development Workflow
 
 - **Branching**: Create feature branches from `develop` (e.g., `git checkout develop && git checkout -b feature/sprint1-dev1-kafka-setup`).

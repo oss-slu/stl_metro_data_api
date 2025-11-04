@@ -76,6 +76,10 @@ stl_metro_dat_api/
 2. Run read-side microservice: `cd src/read_service && python app.py`.
 3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
+5. To run the secondary front-end (excellence project):
+   - Go to the `frontend` folder in your terminal.
+   - Run `python -m http.server 9000`
+   - Go to `http://localhost:9000` in your web browser.
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
 
