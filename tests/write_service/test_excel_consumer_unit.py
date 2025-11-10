@@ -16,7 +16,7 @@ import pytest
 from sqlalchemy import text, inspect
 
 # We will import AFTER setting PG_DSN to an in-memory SQLite, so the module creates a SQLite engine.
-MODULE_PATH = "src.write_service.consumers.excel_consumer"
+MODULE_PATH = "write_service.consumers.excel_consumer"
 
 @pytest.fixture(autouse=True)
 def sqlite_engine_env(monkeypatch):
