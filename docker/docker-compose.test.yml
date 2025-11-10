@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks: [kafka-net]
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"        # external host access
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # internal (container-to-container) listener uses kafka:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks: [kafka-net]
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:29092 --list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Create required topics after Kafka is healthy
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-lc"]
+    command: |
+      set -e
+      echo "Creating topics..."
+      for topic in processed.excel.data processed.excel.data.dlq; do
+        kafka-topics --create \
+          --if-not-exists \
+          --bootstrap-server kafka:29092 \
+          --replication-factor 1 \
+          --partitions 3 \
+          --topic "$topic"
+      done
+      echo "Topics created."
+    networks: [kafka-net]
+
+  postgres:
+    image: postgres:14
+    container_name: stl_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: stl_data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../config/pg_init.sql:/docker-entrypoint-initdb.d/pg_init.sql
+    networks: [kafka-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stl_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Optional: run your consumer in a container too
+  write_service:
+    build:
+      context: ../
+      dockerfile: docker/write_service/Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      # inside the docker network, use these hostnames
+      KAFKA_BOOTSTRAP: kafka:29092
+      KAFKA_GROUP_ID: excel-consumer-group
+      PROCESSED_EXCEL_TOPIC: processed.excel.data
+      DLQ_TOPIC: processed.excel.data.dlq
+      PG_DSN: postgresql+psycopg2://postgres:${PG_PASSWORD:-postgres}@stl_postgres:5432/stl_data
+      # Optional: for generic routing fallback
+      SITE_NAME:
+    networks: [kafka-net]
+    ports:
+      - "5000:5000"   # keep if your container exposes HTTP; not required for the consumer-only case
+
+volumes:
+  pg_data:
+
+networks:
+  kafka-net:
+    driver: bridge
