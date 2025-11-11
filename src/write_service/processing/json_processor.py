@@ -68,9 +68,13 @@ def send_data(raw_data):
                 request_timeout_ms=10000,
                 reconnect_backoff_ms=1000
             )
-            producer.send("JSON-data", data)
-            producer.flush()
-            logging.info("Sent JSON data to Kafka: " + str(data))
+
+            # Send each entry in the list separately to Kafka so the message isn't too big
+            for entry in data:
+                producer.send("JSON-data", entry)
+                producer.flush()
+                logging.info("Sent JSON data to Kafka: " + str(entry))
+
             return "Sent data to Kafka successfully!<br>" + "Topic: JSON data<br>" + "Data:<br>" + str(data)
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
