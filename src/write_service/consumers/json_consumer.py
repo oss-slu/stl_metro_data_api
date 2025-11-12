@@ -2,6 +2,15 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 import json, time
 import logging
+import os
+import time
+
+# Configuration
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
+PG_HOST = os.getenv('PG_HOST', 'localhost')
+PG_PORT = os.getenv('PG_PORT', '5432')
+PG_DB = os.getenv('PG_DB', 'stl_data')
+PG_USER = os.getenv('PG_USER', 'postgres')
 
 def retrieve_from_kafka(topic_name):
     """
@@ -47,8 +56,33 @@ def retrieve_from_kafka(topic_name):
 
 def save_into_database(data):
     # I am still working on this!
+    try:
+        from sqlalchemy import create_engine, text
+        
+        # Connect to database
+        engine_url = f"postgresql+psycopg2://{PG_USER}:@{PG_HOST}:{PG_PORT}/{PG_DB}"
+        
+        engine = create_engine(engine_url)
+        
+        # Test connection
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT * FROM snapshots"))
+            print("Pulling rows?: " + str(result.returns_rows))
+        
+        engine.dispose()
+        print("PostgreSQL: OK")
+        
+    # Exceptions
+    except Exception as e:
+        print(f"PostgreSQL failed: {e}")
+        if "password authentication failed" in str(e).lower():
+            print("Tip: Check password in .env and Docker logs. Try 'docker-compose down -v && docker-compose up -d' to reset.")
+        elif "could not translate host name" in str(e).lower():
+            print("Tip: This is usually due to special chars in password; encoding should fix it. Verify PG is running: docker ps")
+        raise
     return
 
 # Test function
 if __name__ == "__main__":
     retrieve_from_kafka("JSON-data")
+    save_into_database("")
