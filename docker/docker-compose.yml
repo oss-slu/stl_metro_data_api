@@ -33,7 +33,7 @@ services:
       echo 'Creating topics: $raw-data-topic, $processed-data-topic';
       for topic in $(echo $raw-data-topic, $processed-data-topic' | tr ',' '\n'); do
         kafka-topics --create \
-          --bootstrap-server kafka:$9092 \
+          --bootstrap-server kafka:9092 \
           --replication-factor 1 \
           --partitions 3 \
           --topic $topic || true;
@@ -63,26 +63,29 @@ services:
     ports:
       - "5000:5000"
 
+    pdf_consumer:
+      build:
+        context: ../
+        dockerfile: docker/write_service/Dockerfile
+      command: ["python", "-m", "src.write_service.consumers.processed_consumer"]
+      depends_on:
+        - kafka
+        - postgres
+      environment:
+        PG_HOST: postgres
+        PG_PORT: 5432
+        PG_DB: stl_data
+        PG_USER: postgres
+        PG_PASSWORD: Welcome123456
+        DATABASE_URL: "postgresql+psycopg2://postgres:${PG_PASSWORD}@postgres:5432/${PG_DB}"
+        KAFKA_BROKER: "kafka:9092"
+        PROCESSED_TOPIC: "processed-data-topic"
+      networks:
+        - kafka-net
+
 volumes:
   pg_data:
 
 networks:
   kafka-net:
     driver: bridge
-
-pdf_consumer:
-  build:
-    context: ../
-    dockerfile: docker/write_service/Dockerfile
-  command: ["python", "-m", "src.write_service.consumers.processed_consumer"]
-  depends_on:
-    - kafka
-    - postgres
-  environment:
-    PG_HOST: postgres
-    PG_PORT: 5432
-    PG_DB: stl_data
-    PG_USER: postgres
-    PG_PASSWORD: ${PG_PASSWORD}
-  networks:
-    - kafka-net

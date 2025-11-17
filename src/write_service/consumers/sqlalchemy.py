@@ -26,3 +26,23 @@ def get_or_create_table_class(table_name: str):
         tables = Column(JSON)
         created_at = Column(TIMESTAMP, server_default=func.now())
     return DynamicTable
+
+
+
+_dynamic_models = {}
+
+def get_or_create_table_class(table_name: str):
+    if table_name in _dynamic_models:
+        return _dynamic_models[table_name]
+
+    class DynamicTable(Base):
+        __tablename__ = table_name
+        id = Column(Integer, primary_key=True)
+        pdf_id = Column(String, nullable=False)
+        entities = Column(JSON, nullable=False)
+        snippet = Column(Text)
+        tables = Column(JSON)
+        created_at = Column(TIMESTAMP, server_default=func.now())
+
+    _dynamic_models[table_name] = DynamicTable
+    return DynamicTable
