@@ -115,7 +115,7 @@ Register a new server in PostgreSQL pgAdmin 4 with port number 5433
 Use Docker Compose to spin up Kafka (with Zookeeper) and PostgreSQL containers.
 
 ```bash
-docker-compose --env-file.env -f docker/docker-compose.yml up -d
+docker-compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 - Verify containers are running: `docker ps` (should list `zookeeper`, `kafka`, and `postgres`).
