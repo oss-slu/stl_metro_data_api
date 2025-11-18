@@ -14,3 +14,4 @@ six==1.16.0
 python-dotenv==1.1.1
 requests-mock==1.11.0
 jsonschema
+pycryptodome>=3.0
