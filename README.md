@@ -18,7 +18,7 @@ The STL Data API project is a centralized, user-friendly platform designed to se
 5. API Access: Expose RESTful endpoints (via Flask) for querying data, with Open API documentation.
 6. Future Features: Add user subscriptions, web portal, and advanced optimizations.
 
-Archetecture overview diagram here: docs/architecture_overview.png
+Architecture overview diagram here: [Architecture](/docs/architecture_overview.png)
 
 **Tech Stack**
 
@@ -105,6 +105,10 @@ The STL Metro Data API uses CQRS architecture to separate data collection (write
 - Write Service: Data ingestion and processing
 - Kafka: Event streaming and message queue
 - Read Service: PostgreSQL database and Flask API
+
+## Code of Conduct
+
+We are committed to fostering an inclusive and respectful community for all contributors to the STL Data API project. Please review our [Code of Conduct](docs/CODE_OF_CONDUCT.md) for guidelines on expected behavior, reporting violations, and our pledge to a harassment-free environment. By participating, you agree to uphold these standards.
 
 ## Contact
 
