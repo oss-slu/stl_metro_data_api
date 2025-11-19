@@ -9,10 +9,28 @@ from kafka import KafkaConsumer
 import json
 import logging
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 from .models import StLouisCensusData, get_db_engine, create_tables
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def retry_database_operation(func, max_retries=3, delay=2):
+    """
+    Retry database operations on failure
+    func: function to retry
+    max_retries: maximum number of retry attempts
+    delay: seconds to wait between retries
+    """
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except SQLAlchemyError as e:
+            if attempt == max_retries - 1:
+                raise
+            logger.warning(f"Database error (attempt {attempt + 1}/{max_retries}): {e}")
+            time.sleep(delay)
 
 def consume_web_data(topic="processed.web.data", max_messages=None):
     """Consume messages from Kafka and store in PostgreSQL"""
@@ -25,8 +43,10 @@ def consume_web_data(topic="processed.web.data", max_messages=None):
         topic,
         bootstrap_servers="localhost:9092",
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-        auto_offset_reset="eaerliest", # read from beginning
-        group_id="web-consumer-group"
+        auto_offset_reset="earliest",
+        enable_auto_commit=True,
+        group_id="web-consumer-group",
+        consumer_timeout_ms=10000  # Exit after 10s of no messages (for testing)
     )
     logger.info(f"Started consuming from topic: {topic}")
 
@@ -39,9 +59,13 @@ def consume_web_data(topic="processed.web.data", max_messages=None):
             #4. Store in database
             session = Session()
             try:
-                record = StLouisCensusData(raw_json=data)
-                session.add(record)
-                session.commit()
+                def insert_record():
+                    record = StLouisCensusData(raw_json=data)
+                    session.add(record)
+                    session.commit()
+                    return record
+                
+                retry_database_operation(insert_record)
                 logger.info(f"Inserted record into database: {data}")
 
                 message_count += 1
@@ -50,8 +74,8 @@ def consume_web_data(topic="processed.web.data", max_messages=None):
                     break
             except Exception as e:
                 session.rollback()
-                logger.error(f"Database error: {e}")
-                # TODO: Send to dead=letter queue
+                logger.error(f"Failed to insert after retries: {e}")
+                # TODO: Send to dead-letter queue
             finally:
                 session.close()
     except KeyboardInterrupt:
