@@ -38,7 +38,7 @@ def clean_data(raw_data):
     
     return result
 
-def send_data(raw_data):
+def send_data(raw_data, topic_name):
     """This function checks if the data passes the schema and then sends the data to Kafka."""
 
     # Clean the data first
@@ -68,10 +68,14 @@ def send_data(raw_data):
                 request_timeout_ms=10000,
                 reconnect_backoff_ms=1000
             )
-            producer.send("JSON-data", data)
-            producer.flush()
-            logging.info("Sent JSON data to Kafka: " + str(data))
-            return "Sent data to Kafka successfully!<br>" + "Topic: JSON data<br>" + "Data:<br>" + str(data)
+
+            # Send each entry in the list separately to Kafka so the message isn't too big
+            for entry in data:
+                producer.send(topic_name, entry)
+                producer.flush()
+                logging.info("Sent JSON data to Kafka: " + str(entry))
+
+            return "Sent data to Kafka successfully!<br>" + "Topic: " + topic_name + "<br>" + "Data:<br>" + str(data)
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
             logging.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
