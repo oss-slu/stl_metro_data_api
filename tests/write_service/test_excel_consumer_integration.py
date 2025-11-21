@@ -9,7 +9,7 @@ from kafka import KafkaProducer
 import psycopg2
 
 
-CONSUMER_ENTRY = ["python", "-m", "src.write_service.consumers.excel_consumer"]
+CONSUMER_ENTRY = ["python", "-m", "write_service.consumers.excel_consumer"]
 
 
 @pytest.mark.integration
@@ -63,7 +63,7 @@ def test_end_to_end_kafka_to_postgres(tmp_path):
     producer.flush()
 
     # wait for consumer to process
-    time.sleep(6)
+    time.sleep(12)
 
     # Connect to PG and verify
     conn = psycopg2.connect("dbname=stl_data user=postgres password=postgres host=localhost port=5432")
