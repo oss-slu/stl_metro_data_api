@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, render_template_string
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
+from src.write_service.processing.arpa_processor import retrieve_from_database
 
 # This is the Python app for the WRITE service
 app = Flask(__name__)
@@ -40,6 +41,34 @@ def test_json():
                     {kafka_status}
                 <hr><br>
                 <b>JSON data received from website (not cleaned yet):</b>
+                <pre>{formattedResult}</pre>
+                </p>
+            </body>
+        </html>
+    """
+    return render_template_string(html)
+
+@app.route('/api/arpa', strict_slashes = False)
+def arpa():
+    """
+    In progress: Data on ARPA funds
+    """
+
+    # Grab from data base
+    testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
+    result = retrieve_from_database()
+
+    # Display results to user
+    formattedResult = result
+    html = f"""
+        <html>
+            <head>
+                <title>STL Data API - Write Service - ARPA Database Test</title>
+            </head>
+            <body>
+                <h1>STL Data API - Write Service - ARPA Database Test</h1>
+                <hr><br>
+                <b>Data from database:</b>
                 <pre>{formattedResult}</pre>
                 </p>
             </body>
