@@ -12,12 +12,17 @@ Integrates with write_service via shared PG (CQRS separation).
 """
 
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template, render_template_string
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from src.read_service.processors.arpa_processor import retrieve_from_database, save_into_database
+
+# Initialize Flask app
+app = Flask(__name__)
+api = Api(app)
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -30,10 +35,6 @@ PG_PASSWORD = os.getenv('PG_PASSWORD', 'example_pass')
 engine_url = f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Initialize Flask app
-app = Flask(__name__)
-api = Api(app)
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -60,6 +61,22 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 
 # Register the blueprint
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+@app.route('/api/arpa', strict_slashes = False)
+def arpa():
+    """
+    This function returns the ARPA funds data (list of dictionaries) from the ARPA Processor
+    """
+    result = retrieve_from_database()
+    print(result)
+    return result
+
+@app.route('/')
+def main():
+    """
+    For now, we just show a simple webpage.
+    """
+    return render_template("index.html")
 
 # Basic health check endpoint (Query side: Check PG connection)
 @app.route('/health', methods=['GET'])
@@ -184,7 +201,7 @@ if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
     # This ensures that when the read-service starts, it also begins
     # simulating event consumption in the background.
-    from processors.events import start_mock_consumer
+    from src.read_service.processors.events import start_mock_consumer
     start_mock_consumer(app.logger)
 
     # Run the Flask app (debug mode = True for development only).
