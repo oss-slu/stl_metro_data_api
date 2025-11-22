@@ -1,9 +1,5 @@
-from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
-import json, time
 import os
-import time
-from sqlalchemy import Column, Integer, DateTime, JSON, String, create_engine
+from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine, select
 from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
@@ -11,7 +7,7 @@ import urllib.parse
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
-PG_HOST = os.getenv('PG_HOST', 'localhost')
+PG_HOST = os.getenv('PG_HOST', 'postgres')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
@@ -21,46 +17,90 @@ PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg passwo
 class Base(DeclarativeBase):
     pass
 
-def get_table_class(table_name):
-    """
-    Get the table class with the given table name
-    """
-    class DataTable(Base):
-            __tablename__ = table_name
-            id = Column(Integer, primary_key=True, autoincrement=True)
-            name = Column(String)
-            content = Column(JSON, nullable=False)
-            date_added = Column(DateTime, default=datetime.now(timezone.utc))
-    return DataTable
+# The ARPA funds table class
+class DataTable(Base):
+    __tablename__ = "arpa_funds_table"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    content = Column(JSON, nullable=False)
+    is_active = Column(Boolean)
+    data_posted_on = Column(DateTime, default=datetime.now(timezone.utc))
 
 def retrieve_from_database():
     """
-    This function retrieves the ARPA fund data from the database.
+    This function retrieves the ARPA fund data from the database and returns
+    it as a list of dictionaries.
     """
 
     try:
+        data = []
+
         # Connect to database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
         engine_url = f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
         engine = create_engine(engine_url, echo=True)
 
-        # Get the table class
-        table = get_table_class("arpa")
-
-        # Now let's grab stuff from the table
-        result = session.execute(text("SELECT * FROM test")).fetchall()           
+        session = Session(engine)
+        with Session(engine) as session:
+            # Now let's grab stuff from the table
+            result = select(DataTable)
+            
+            for entity in session.scalars(result):
+                # Only add active data
+                if (entity.is_active):
+                    data.append({"id": entity.id, "name": entity.name, 
+                                "content": entity.content, "data_posted_on": entity.data_posted_on,
+                                "is_active": entity.is_active})
 
         # We are done!
         engine.dispose()
 
-        return result
-
-        print("PostgreSQL: OK")
+        # Return the data (list of dictionaries)
+        return data
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when connecting to the database. \n " + str(e))
-        session.rollback()
+        print("An error occured when retreiving data from the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when retreiving from the database. \n " + str(e))
+        print("An error occured when connecting to the database. \n " + str(e))
+
+# Test saving data into database
+def save_into_database(data):
+    """
+    This is just a test function to put sample data into the database.
+    """
+
+    try:
+        # Connect to the database
+        encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
+        engine_url = f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+        engine = create_engine(engine_url, echo=True)
+
+        # Create the table if not created yet
+        Base.metadata.create_all(engine)
+
+        # Start a session
+        session = Session(engine)
+
+        with Session(engine) as session:
+            entity_counter = 1
+
+            # Save the data in the database
+            for entity in data:
+                new_row = DataTable(
+                    name = "ARPA Funds Entity #" + str(entity_counter),
+                    content = entity,
+                    is_active = True)
+                session.add(new_row)
+                entity_counter += 1
+
+            # Push all changes
+            session.commit() 
+
+    # Exceptions
+    except SQLAlchemyError as e:
+        print("An error occured when saving to the database. \n " + str(e))
+
+    except Exception as e:
+        print("An error occured when connecting to the database. \n " + str(e))
