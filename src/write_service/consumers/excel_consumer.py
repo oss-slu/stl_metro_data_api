@@ -34,24 +34,32 @@ from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 
 from kafka import KafkaConsumer, KafkaProducer
+import urllib
 
 # ------------------------------
 # ENV / CONFIG
 # ------------------------------
 KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "kafka:9092")
-KAFKA_GROUP_ID  = os.getenv("KAFKA_GROUP_ID", "excel-consumer-group")
-TOPIC           = os.getenv("PROCESSED_EXCEL_TOPIC", "processed.excel.data")
-DLQ_TOPIC       = os.getenv("DLQ_TOPIC", "processed.excel.data.dlq")
+KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "excel-consumer-group")
+TOPIC = os.getenv("PROCESSED_EXCEL_TOPIC", "processed.excel.data")
+DLQ_TOPIC = os.getenv("DLQ_TOPIC", "processed.excel.data.dlq")
+
+PG_HOST = os.getenv('PG_HOST', 'localhost')
+PG_PORT = os.getenv('PG_PORT', '5432')
+PG_DB = os.getenv('PG_DB', 'stl_data')
+PG_USER = os.getenv('PG_USER', 'postgres')
+PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
 
 # Optional: default table/site if messages don't carry routing metadata
-DEFAULT_TABLE   = os.getenv("SITE_NAME")  # e.g., "stlouis_gov_crime"
+DEFAULT_TABLE = os.getenv("SITE_NAME")  # e.g., "stlouis_gov_crime"
 
 # Optional: static mapping of topic -> table (JSON string)
 # Example: TOPIC_TABLE_MAP='{"processed.excel.data":"stlouis_gov_crime"}'
 TOPIC_TABLE_MAP = json.loads(os.getenv("TOPIC_TABLE_MAP", "{}") or "{}")
 
 # DB
-PG_DSN = os.getenv("PG_DSN", "postgresql+psycopg2://postgres:postgres@localhost:5432/stl_data")
+encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
+PG_DSN = os.getenv("PG_DSN", "postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}")
 
 # Retry
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
@@ -68,19 +76,14 @@ metadata = MetaData()
 # Cache of already-reflected/created tables: {table_name: Table}
 _table_cache: Dict[str, Table] = {}
 
-# ------------------------------
-# Type inference helpers
-# ------------------------------
 def _try_datetime(v: Any) -> Optional[datetime]:
     if v is None:
         return None
     if isinstance(v, datetime):
         return v
     if isinstance(v, (int, float)):
-        # don’t guess numeric → datetime (too risky)
         return None
     s = str(v).strip()
-    # Try ISO first
     try:
         return datetime.fromisoformat(s)
     except Exception:
@@ -101,7 +104,7 @@ def infer_sqla_type(value: Any):
     and instead use INTEGER/FLOAT/TEXT so inserts are stable. For Postgres,
     we keep richer types.
     """
-    # --- SQLite-friendly behavior for unit tests ---
+    
     if engine.dialect.name == "sqlite":
         if value is None:
             return String
@@ -230,10 +233,8 @@ def coerce_value(value: Any, coltype):
     # ----- STRING / FALLBACK -----
     return str(value)
 
-# ------------------------------
-# Table management
-# ------------------------------
-META_KEYS = {"_site", "_table", "_schema", "_version"}  # reserved keys we never store as columns
+
+META_KEYS = {"_site", "_table", "_schema", "_version"} 
 
 def _resolve_table_name(topic: str, sample: Dict[str, Any]) -> Optional[str]:
     """
@@ -335,9 +336,8 @@ def _add_missing_columns(tbl: Table, record: Dict[str, Any]) -> None:
     metadata.reflect(bind=engine)
     _table_cache[tbl.name] = metadata.tables[tbl.name]
 
-# ------------------------------
+
 # Insert logic
-# ------------------------------
 def _insert_rows(table: Table, rows: List[Dict[str, Any]]) -> int:
     """
     Insert many rows. Coerces values to column types for safety.
@@ -401,9 +401,9 @@ def _insert_rows(table: Table, rows: List[Dict[str, Any]]) -> int:
 
     return len(rows)
 
-# ------------------------------
+
 # Kafka loop
-# ------------------------------
+
 def run():
     log.info("Starting generic consumer | topic=%s | group=%s", TOPIC, KAFKA_GROUP_ID)
 
