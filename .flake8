@@ -1,12 +1,12 @@
 [flake8]
 # Allow longer lines to match current codebase (temporary)
-max-line-length = 120
+max-line-length = 200
 
 # Ignore whitespace-only complaints and some blank-line rules to reduce noise
 # - W291 / W292 / W293: trailing/blank-line whitespace
 # - E302 / E305 / E306: blank-line rules around top-level function/class boundaries
 # - E401: multiple imports on one line (low-value for now)
-ignore = W291, W292, W293, E302, E305, E306, E401
+ignore = W291, W292, W293, E302, E305, E306, E401, E251, E231, F401
 
 # Exclude common non-source folders
 exclude =

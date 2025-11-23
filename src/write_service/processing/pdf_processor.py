@@ -2,7 +2,7 @@ from __future__ import annotations
 import re
 import json
 import gc
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
 try:
     from src.write_service.ingestion import pdf_fetcher  # type: ignore
