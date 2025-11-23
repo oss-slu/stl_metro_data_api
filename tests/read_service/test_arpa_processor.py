@@ -49,9 +49,9 @@ def test_save_to_database():
         # Check to see if only active data is returned as expected
         assert result[0].get("name") == "ARPA Funds Entity #1"
         assert result[0].get("content") == {'organization': 'United Way'}
-        assert result[0].get("is_active") == True
+        assert result[0].get("is_active") is True
         assert result[1].get("name") == "ARPA Funds Entity #2"
         assert result[1].get("content") == {'organization': 'Urban League'}
-        assert result[0].get("is_active") == True
+        assert result[1].get("is_active") is True
 
         session.close()
