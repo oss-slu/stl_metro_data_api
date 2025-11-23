@@ -115,7 +115,7 @@ Register a new server in PostgreSQL pgAdmin 4 with port number 5433
 Use Docker Compose to spin up Kafka (with Zookeeper) and PostgreSQL containers.
 
 ```bash
-docker-compose --env-file.env -f docker/docker-compose.yml up -d
+docker-compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 - Verify containers are running: `docker ps` (should list `zookeeper`, `kafka`, and `postgres`).
@@ -181,3 +181,10 @@ To run the secondary front-end (excellence project):
 - **Commits**: Use clear messages (e.g., `git commit -m "Add Kafka consumer for web data"`).
 - **Pull Requests**: Push your branch (`git push origin feature/your-branch`) and create a PR to `develop`. Assign a reviewer.
 - **Kanban Board**: Check GitHub Projects for assigned issues and sprint tasks.
+
+
+## CI / CD Overview
+
+- **CI** (`.github/workflows/ci.yml`): runs linting (flake8) and tests (`pytest`) on pushes to `main/develop` and PRs targeting `main`. It uses `actions/cache` to cache pip downloads based on requirements.txt.
+- **Docker Validation** (`.github/workflows/docker-validation.yml`): builds `write_service` and `read_service` images with dynamic tags and runs a lightweight smoke test. No images are pushed to any registry.
+- To run locally: run `pytest` for tests; use `docker build -f docker/write_service/Dockerfile -t local/write_service:TAG .` to locally validate the Dockerfile.

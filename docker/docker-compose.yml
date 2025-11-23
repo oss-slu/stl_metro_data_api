@@ -63,6 +63,13 @@ services:
     ports:
       - "5000:5000"
 
+  read_service:
+    build:
+      context: ../
+      dockerfile: docker/read_service/Dockerfile
+    ports:
+      - "5001:5001"
+
 volumes:
   pg_data:
 
