@@ -8,6 +8,9 @@ import os
 import sys
 import time
 import urllib.parse
+import pytest
+
+pytestmark = pytest.mark.integration
 
 # Load environment variables
 try:

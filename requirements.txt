@@ -2,7 +2,7 @@ flask==3.0.0
 flask-restful==0.3.10
 kafka-python==2.2.0
 psycopg2-binary>=2.9.10
-pandas>=2.2.0 
+pandas>=2.0.3,<3.0
 requests==2.32.4
 beautifulsoup4==4.12.2
 PyPDF2==3.0.1
@@ -11,7 +11,7 @@ sqlalchemy>=2.0.30
 flask-swagger-ui==4.11.1
 pytest==7.4.3
 six==1.16.0
-python-dotenv==1.1.1
+python-dotenv==1.0.1
 requests-mock==1.11.0
-jsonschema
+jsonschema>=4.0.0,<5.0
 pycryptodome>=3.0
