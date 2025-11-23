@@ -9,6 +9,9 @@ import sys
 import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
+import pytest
+
+pytestmark = pytest.mark.integration
 
 # Load environment variables
 try: 

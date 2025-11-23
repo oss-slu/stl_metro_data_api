@@ -78,8 +78,8 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          # Run the project's tests directory. Fail CI if tests fail.
-          pytest -q tests/
+          # Skip integration tests (those marked with @pytest.mark.integration)
+          pytest -q tests/ -m "not integration"
 
       - name: Upload pytest results (optional)
         if: always()
