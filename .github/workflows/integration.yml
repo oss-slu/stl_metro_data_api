@@ -1,0 +1,144 @@
+# Integration tests: run docker-compose and pytest -m integration for PRs
+# Uses the repository's docker/docker-compose.yml to start Kafka + Postgres + services.
+name: Integration Tests (docker-compose)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  integration:
+    name: Integration tests (docker-compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # Host-level ports exposed by docker-compose on the runner
+      # Host Postgres port (mapped from service pg 5432). Adjust if you prefer 5433.
+      PG_PORT: "5433"
+      PG_HOST: "localhost"
+      PG_DB: "stl_data"
+      PG_USER: "postgres"
+      # Use a repository secret for real password (set in repo Settings > Secrets)
+      PG_PASSWORD: ${{ secrets.PG_PASSWORD }}
+      # Kafka bootstrap to use from the runner (docker-compose maps container 9092 to host 9092)
+      KAFKA_BOOTSTRAP: "localhost:9092"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write a .env file for docker-compose
+        # docker/docker-compose.yml references env vars; keep them in sync here.
+        run: |
+          cat > .env <<'EOF'
+          PG_HOST=${{ env.PG_HOST }}
+          PG_PORT=${{ env.PG_PORT }}
+          PG_DB=${{ env.PG_DB }}
+          PG_USER=${{ env.PG_USER }}
+          PG_PASSWORD=${{ env.PG_PASSWORD }}
+          KAFKA_BOOTSTRAP=${{ env.KAFKA_BOOTSTRAP }}
+          KAFKA_BROKER_ID=1
+          KAFKA_BROKER_HOST=kafka
+          KAFKA_BROKER_PORT=9092
+          KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+          ZOOKEEPER_HOST=zookeeper
+          ZOOKEEPER_PORT=2181
+          EOF
+        shell: bash
+
+      - name: Start docker-compose
+        run: |
+          docker compose -f docker/docker-compose.yml up -d --build
+        shell: bash
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        shell: bash
+
+      - name: Wait for Postgres to be ready (py)
+        # Try to connect with psycopg2 until it succeeds or times out.
+        run: |
+          python - <<'PY'
+          import time, os, sys
+          import psycopg2
+          host = os.environ.get("PG_HOST", "localhost")
+          port = int(os.environ.get("PG_PORT", "5433"))
+          user = os.environ.get("PG_USER", "postgres")
+          password = os.environ.get("PG_PASSWORD", "")
+          db = os.environ.get("PG_DB", "stl_data")
+          deadline = time.time() + 60
+          while time.time() < deadline:
+              try:
+                  conn = psycopg2.connect(host=host, port=port, dbname=db, user=user, password=password)
+                  conn.close()
+                  print("Postgres ready")
+                  sys.exit(0)
+              except Exception as e:
+                  print("Postgres not ready yet:", e)
+                  time.sleep(2)
+          print("Timed out waiting for Postgres")
+          sys.exit(1)
+          PY
+        shell: bash
+
+      - name: Wait for Kafka to be ready (py)
+        # Use kafka-python admin client to list topics (retry loop)
+        run: |
+          python - <<'PY'
+          import time, os, sys
+          from kafka.admin import KafkaAdminClient
+          bs = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+          deadline = time.time() + 60
+          while time.time() < deadline:
+              try:
+                  admin = KafkaAdminClient(bootstrap_servers=bs, request_timeout_ms=5000)
+                  topics = admin.list_topics(timeout=5)
+                  print("Kafka ready, topics:", topics)
+                  admin.close()
+                  sys.exit(0)
+              except Exception as e:
+                  print("Kafka not ready yet:", e)
+                  time.sleep(2)
+          print("Timed out waiting for Kafka")
+          sys.exit(1)
+          PY
+        shell: bash
+
+      - name: Run integration tests
+        env:
+          # Ensure tests use the host-level ports we just exposed
+          PG_HOST: ${{ env.PG_HOST }}
+          PG_PORT: ${{ env.PG_PORT }}
+          PG_DB: ${{ env.PG_DB }}
+          PG_USER: ${{ env.PG_USER }}
+          PG_PASSWORD: ${{ env.PG_PASSWORD }}
+          KAFKA_BOOTSTRAP: ${{ env.KAFKA_BOOTSTRAP }}
+        run: |
+          pytest -m integration -q --maxfail=1
+        shell: bash
+
+      - name: Collect docker logs on failure
+        if: failure()
+        run: |
+          echo "=== docker ps ==="
+          docker compose -f docker/docker-compose.yml ps -a
+          echo "=== kafka logs ==="
+          docker compose -f docker/docker-compose.yml logs kafka --tail=200
+          echo "=== zookeeper logs ==="
+          docker compose -f docker/docker-compose.yml logs zookeeper --tail=200
+          echo "=== postgres logs ==="
+          docker compose -f docker/docker-compose.yml logs postgres --tail=200
+          echo "=== write_service logs ==="
+          docker compose -f docker/docker-compose.yml logs write_service --tail=200 || true
+        shell: bash
+
+      - name: Tear down docker-compose
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.yml down -v --remove-orphans
+        shell: bash
