@@ -1,4 +1,6 @@
 # STL Metro Data API
+![CI](https://github.com/oss-slu/stl_metro_data_api/actions/workflows/ci.yml/badge.svg)
+![Docker Validation](https://github.com/oss-slu/stl_metro_data_api/actions/workflows/docker-validation.yml/badge.svg)
 
 **Overview**
 
