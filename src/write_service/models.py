@@ -140,4 +140,3 @@ def ensure_tsvector_support():
             conn.execute(sa_text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
         except Exception:
             pass
-

@@ -15,20 +15,6 @@ DATABASE_URL = (
 engine = create_engine(DATABASE_URL, echo=True, future=True)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
-def get_or_create_table_class(table_name: str):
-    """create a table class if it doesn't exist"""
-    class DynamicTable(Base):
-        __tablename__ = table_name
-        id = Column(Integer, primary_key=True, autoincrement=True)
-        pdf_id = Column(String, nullable=False)
-        entities = Column(JSON, nullable=False)
-        snippet = Column(Text)
-        tables = Column(JSON)
-        created_at = Column(TIMESTAMP, server_default=func.now())
-    return DynamicTable
-
-
-
 _dynamic_models = {}
 
 def get_or_create_table_class(table_name: str):
