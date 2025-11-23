@@ -19,7 +19,7 @@ def test_send_to_kafka_valid():
     kafka_status = send_data(valid_records)
 
     # See if matches expected response from JSON processor
-    assert kafka_status.startswith("Sent data to Kafka successfully!") == True
+    assert kafka_status.startswith("Sent data to Kafka successfully!")
 
 def test_send_to_kafka_invalid():
     """This test checks if improperly formatted data is able to be cleaned, pass the schema, and be sent to Kafka."""
@@ -28,4 +28,4 @@ def test_send_to_kafka_invalid():
     kafka_status = send_data(invalid_records)
 
     # See if matches expected response from JSON processor
-    assert kafka_status.startswith("Sent data to Kafka successfully!") == True
+    assert kafka_status.startswith("Sent data to Kafka successfully!")

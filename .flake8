@@ -1,0 +1,24 @@
+[flake8]
+# Allow longer lines to match current codebase (temporary)
+max-line-length = 120
+
+# Ignore whitespace-only complaints and some blank-line rules to reduce noise
+# - W291 / W292 / W293: trailing/blank-line whitespace
+# - E302 / E305 / E306: blank-line rules around top-level function/class boundaries
+# - E401: multiple imports on one line (low-value for now)
+ignore = W291, W292, W293, E302, E305, E306, E401
+
+# Exclude common non-source folders
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    docker,
+    docs
+
+# Per-file-ignores (targeted, more specific)
+# You can add file-specific ignores here if any file should remain stricter,
+# e.g. tests or scripts.
