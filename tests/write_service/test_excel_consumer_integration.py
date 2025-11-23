@@ -13,7 +13,7 @@ import urllib
 CONSUMER_ENTRY = ["python", "-m", "write_service.consumers.excel_consumer"]
 
 
-@pytest.mark.integration
+# @pytest.mark.integration
 def test_end_to_end_kafka_to_postgres(tmp_path):
     """
     Requires: docker compose up -d using docker-compose.test.yml
