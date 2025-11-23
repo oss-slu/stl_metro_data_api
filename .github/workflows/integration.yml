@@ -2,6 +2,9 @@
 # Uses the repository's docker/docker-compose.yml to start Kafka + Postgres + services.
 name: Integration Tests (docker-compose)
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
