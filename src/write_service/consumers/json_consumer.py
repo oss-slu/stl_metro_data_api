@@ -2,7 +2,6 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 import json, time
 import os
-import time
 from sqlalchemy import Column, Integer, DateTime, JSON, String, create_engine
 from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,7 +11,7 @@ import urllib.parse
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 PG_HOST = os.getenv('PG_HOST', 'localhost')
-PG_PORT = os.getenv('PG_PORT', '5432')
+PG_PORT = os.getenv('PG_PORT', '5433')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
@@ -27,18 +26,18 @@ def get_table_class(table_name):
     This allows the table to be named after the topic (e.g. crime, traffic, etc.)
     """
     class DataTable(Base):
-            __tablename__ = table_name
-            id = Column(Integer, primary_key=True, autoincrement=True)
-            name = Column(String)
-            content = Column(JSON, nullable=False)
-            date_added = Column(DateTime, default=datetime.now(timezone.utc))
+        __tablename__ = table_name
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        name = Column(String)
+        content = Column(JSON, nullable=False)
+        date_added = Column(DateTime, default=datetime.now(timezone.utc))
     return DataTable
 
 def retrieve_from_kafka(topic_name):
     """
     This function retrieves the JSON data from Kafka.
     """
-    if (topic_name == None):
+    if (topic_name is None):
         topic_name = "JSON-data"
 
     received_data = []
@@ -82,7 +81,7 @@ def save_into_database(data, topic_name, topic_extended_name=None):
     Each entity of the data is a row.
     """
 
-    if (topic_extended_name == None):
+    if (topic_extended_name is None):
         topic_extended_name = topic_name
     
     try:
@@ -108,19 +107,18 @@ def save_into_database(data, topic_name, topic_extended_name=None):
             entity_counter = 1
 
             for entity in data:
-                    
-                    # Ensure data is in JSON format, otherwise we skip it
-                    try:
-                        json.dumps(entity)
-                    except json.JSONDecodeError:
-                        print("Entity " + str(entity) + " is not valid JSON. Going to the next entity.")
-                        continue
-                    
-                    new_row = table(
-                        name= topic_extended_name + " Entity #" + str(entity_counter),
-                        content=entity)
-                    session.add(new_row)
-                    entity_counter += 1
+                # Ensure data is in JSON format, otherwise we skip it
+                try:
+                    json.dumps(entity)
+                except json.JSONDecodeError:
+                    print("Entity " + str(entity) + " is not valid JSON. Going to the next entity.")
+                    continue
+                
+                new_row = table(
+                    name= topic_extended_name + " Entity #" + str(entity_counter),
+                    content=entity)
+                session.add(new_row)
+                entity_counter += 1
                     
             # Push all changes
             session.commit()             
