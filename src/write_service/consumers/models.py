@@ -6,7 +6,7 @@ Database models for storing web-scraped data.
 from sqlalchemy import Column, Integer, String, DateTime, JSON, create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
 import urllib  
@@ -35,7 +35,7 @@ class StLouisCensusData(Base):
     # title = Column(String, ) # pull out title from each table
     # isActive, default false, when add new stuff into table, deactivate old rows if new rows are succesfully added
     raw_json = Column(JSON, nullable=False) # Store the entire kafka message
-    ingested_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 def get_db_engine():  # create database engine from .env config
     encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
