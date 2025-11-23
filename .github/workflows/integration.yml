@@ -100,7 +100,7 @@ jobs:
           while time.time() < deadline:
               try:
                   admin = KafkaAdminClient(bootstrap_servers=bs, request_timeout_ms=5000)
-                  topics = admin.list_topics(timeout=5)
+                  topics = admin.list_topics()
                   print("Kafka ready, topics:", topics)
                   admin.close()
                   sys.exit(0)
