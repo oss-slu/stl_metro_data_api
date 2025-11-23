@@ -10,8 +10,10 @@ on:
   workflow_dispatch:
 
 env:
-  # Default python versions for matrix job
-  PYTHON_VERSIONS: '3.10 3.11'
+  # Default python versions for matrix job (as a single scalar value)
+  PYTHON_VERSIONS: |
+    3.10
+    3.11
 
 jobs:
   lint:
@@ -51,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11]
+        python-version: ['3.10', '3.11']
     needs: lint
     steps:
       - name: Checkout
