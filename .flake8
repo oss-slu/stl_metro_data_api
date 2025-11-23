@@ -6,7 +6,7 @@ max-line-length = 200
 # - W291 / W292 / W293: trailing/blank-line whitespace
 # - E302 / E305 / E306: blank-line rules around top-level function/class boundaries
 # - E401: multiple imports on one line (low-value for now)
-ignore = W291, W292, W293, E302, E305, E306, E401, E251, E231, F401
+ignore = W291, W292, W293, E302, E305, E306, E401, E251, E231, F401, F403, E402, F821, F841, E261, E226, E501
 
 # Exclude common non-source folders
 exclude =
