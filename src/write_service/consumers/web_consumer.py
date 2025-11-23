@@ -5,6 +5,7 @@ Kafka consumer for web-scraped data.
 Reads from 'processed.web.data' topic and stores in PostgreSQL.
 """
 
+import os
 from kafka import KafkaConsumer
 import json
 import logging
@@ -38,10 +39,12 @@ def consume_web_data(topic="processed.web.data", max_messages=None):
     engine = get_db_engine()
     create_tables(engine)
     Session = sessionmaker(bind=engine)
-    #2. Setup Kafka consumer
+    # 2. Setup Kafka consumer
+    bootstrap = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
+
     consumer = KafkaConsumer(
         topic,
-        bootstrap_servers="localhost:9092",
+        bootstrap_servers=bootstrap,
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         auto_offset_reset="earliest",
         enable_auto_commit=True,
@@ -50,13 +53,13 @@ def consume_web_data(topic="processed.web.data", max_messages=None):
     )
     logger.info(f"Started consuming from topic: {topic}")
 
-    #3. Consume messages
+    # 3. Consume messages
     message_count = 0
     try:
         for message in consumer:
             data = message.value
             logger.info(f"Received message: {data}")
-            #4. Store in database
+            # 4. Store in database
             session = Session()
             try:
                 def insert_record():

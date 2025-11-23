@@ -108,7 +108,7 @@ def test_retry_logic():
     assert attempt_count[0] == 3
 
 
-#@pytest.mark.integration
+# @pytest.mark.integration
 def test_consumer_with_real_kafka():
     """Integration test with real Kafka."""
     from kafka import KafkaProducer
