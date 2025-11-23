@@ -3,7 +3,7 @@ import json
 import pytest
 from unittest.mock import MagicMock
 
-from src.write_service import pdf_processor
+from src.write_service.processing import pdf_processor
 from src.write_service.ingestion import pdf_fetcher
 
 PDF_URL = "https://www.stlouis-mo.gov/government/departments/human-services/homeless-services/documents/upload/Revised-2012-ESG-Action-Plan.pdf"
@@ -43,7 +43,8 @@ def test_process_pdf_and_insert_tables(fake_session):
     payload_bytes = pdf_processor.build_payload(PDF_ID, entities, snippet=full_text[:300], tables=tables)
 
     # Handle message with mocked session
-    result = pdf_processor.handle_message(fake_session, payload_bytes)
+    from src.write_service.consumers.pdf_consumer import handle_message as consumer_handle_message
+    result = consumer_handle_message(fake_session, payload_bytes)
     print("Consumer insert result:", result)
 
     # Assertions
