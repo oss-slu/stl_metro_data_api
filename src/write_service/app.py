@@ -23,7 +23,7 @@ def test_json():
     # Grab and parse data from URL, also send to Kafka
     testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
     result = get_json(testURL)
-    kafka_status = send_data(result)
+    kafka_status = send_data(result, "arpa")
 
     # Display results to user
     formattedResult = json.dumps(result, indent=2)
