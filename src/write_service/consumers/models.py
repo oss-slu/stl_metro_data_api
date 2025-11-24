@@ -37,6 +37,39 @@ class StLouisCensusData(Base):
     raw_json = Column(JSON, nullable=False) # Store the entire kafka message
     ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
+# Add this to your existing models.py in write_service
+
+class StLouisBusinessCitizen(Base):
+    """
+    Stores business/citizen service data from St. Louis services page.
+    Source: https://www.stlouis-mo.gov/services/
+    
+    Columns:
+    - id: Primary key
+    - created_on: Record creation timestamp
+    - data_posted_on: When data was posted on source site
+    - is_active: Integer flag for active records (1=active, 0=inactive)
+    - contact_info: JSON field for contact details
+    - service_name: Name of the business/citizen service
+    - description: Service description
+    - raw_json: Complete data payload
+    """
+    __tablename__ = "stlouis_business_citizen"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_on = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    data_posted_on = Column(DateTime, nullable=True)
+    is_active = Column(Integer, default=1, nullable=False)  # 1=active, 0=inactive
+    
+    # Add fields that map to the actual site data from stlouis-mo.gov/services
+    service_name = Column(String, nullable=True)
+    contact_info = Column(JSON, nullable=True)  # Store phone, email, address as JSON
+    description = Column(String, nullable=True)
+    source_url = Column(String, default='https://www.stlouis-mo.gov/services/', nullable=True)
+    
+    raw_json = Column(JSON, nullable=False)  # Store complete data
+    ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
 def get_db_engine():  # create database engine from .env config
     encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
     db_url = os.getenv(

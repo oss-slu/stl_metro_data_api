@@ -15,6 +15,7 @@ import os
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
+from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
@@ -179,6 +180,42 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/business", methods=["GET"])
+def business_citizen_api():
+    """
+    GET endpoint for active business/citizen service data.
+    
+    Retrieves all active records (is_active=1) from stlouis_business_citizen table.
+    Each record includes a source URL linking back to the original data source.
+    
+    Returns:
+        JSON array of active business/citizen service records
+        
+    Example response:
+        [
+            {
+                "id": 1,
+                "service_name": "Business License Application",
+                "contact_info": {"phone": "314-xxx-xxxx"},
+                "source_url": "https://www.stlouis-mo.gov/services/",
+                ...
+            }
+        ]
+        
+    Source: St. Louis City Services
+            https://www.stlouis-mo.gov/services/
+    """
+    from processors.business_citizen_processor import get_business_citizen_data
+    
+    try:
+        db = SessionLocal()  # Use the SessionLocal already defined in app.py
+        data = get_business_citizen_data(db)
+        db.close()
+        return jsonify(data), 200
+    except Exception as e:
+        app.logger.error(f"Business/Citizen API error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
