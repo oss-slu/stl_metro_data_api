@@ -47,6 +47,71 @@ def test_json():
     """
     return render_template_string(html)
 
+@app.route('/pdf', strict_slashes=False)
+def test_pdf():
+    """
+    Test endpoint that:
+    - fetches a PDF (from URL or local path),
+    - extracts text,
+    - processes tables/entities,
+    - sends processed payload to Kafka,
+    - and displays results in the browser.
+    """
+
+    from src.write_service.ingestion.pdf_fetcher import extract_text_from_pdf
+    from src.write_service.processing.pdf_processor import process_pdf_file
+
+    # Example PDF source (change to anything you want)
+    pdf_id = "test_pdf_001"
+    pdf_source = "https://www.stlouis-mo.gov/government/departments/human-services/homeless-services/documents/upload/Revised-2012-ESG-Action-Plan.pdf"
+    is_url = True
+
+    try:
+        # ---- Extract text pages for display ----
+        pages = extract_text_from_pdf(pdf_source, is_url=is_url)
+
+        # ---- Process PDF (entities, tables, snippet) and send to Kafka ----
+        kafka_status = process_pdf_file(
+            pdf_id=pdf_id,
+            source=pdf_source,
+            producer=send_data,     # your existing Kafka producer wrapper
+            topic="pdf-processed-topic",
+            is_url=is_url
+        )
+
+        # ---- Build UI Output ----
+        formatted_pages = "<br><hr><br>".join(
+            f"<h3>Page {i+1}</h3><pre>{p}</pre>"
+            for i, p in enumerate(pages)
+        )
+
+        html = f"""
+            <html>
+                <head>
+                    <title>PDF Test - WRITE Service</title>
+                </head>
+                <body>
+                    <h1>PDF Extraction + Processing Test</h1>
+
+                    <h2>Source PDF:</h2>
+                    <p>{pdf_source}</p>
+
+                    <h2>Kafka Processing Result:</h2>
+                    <pre>{json.dumps(kafka_status, indent=2)}</pre>
+
+                    <h2>Extracted PDF Text by Page:</h2>
+                    {formatted_pages}
+                </body>
+            </html>
+        """
+
+        return render_template_string(html)
+
+    except Exception as e:
+        logging.error(f"PDF test failed: {e}")
+        return {"error": str(e)}, 500
+
+
 @app.route('/health')
 def health():
     """Endpoint for checking health of this app (if basic endpoint works or not)."""

@@ -135,31 +135,43 @@ def swagger_spec():
     Open API spec for read_service endpoints.
     """
     return jsonify({
-        "openapi": "3.0.0",
-        "info": {"title": "STL Data API Read Service", "version": "1.0.0"},
-        "paths": {
-            "/health": {
-                "get": {
-                    "summary": "Health check",
-                    "responses": {"200": {"description": "OK"}}
-                }
-            },
-            "/events/{event_type}": {
-                "get": {
-                    "summary": "Get events by type",
-                    "parameters": [{"name": "event_type", "in": "path", "required": True, "schema": {"type": "string"}}],
-                    "responses": {"200": {"description": "Events list"}}
-                }
-            },
-            "/data/{data_type}": {
-                "get": {
-                    "summary": "Get processed data by type",
-                    "parameters": [{"name": "data_type", "in": "path", "required": True, "schema": {"type": "string"}}],
-                    "responses": {"200": {"description": "Data list"}}
+    "openapi": "3.0.0",
+    "info": {"title": "STL Data API Read Service", "version": "1.0.0"},
+    "paths": {
+        "/health": {
+            "get": {
+                "summary": "Health check",
+                "responses": {"200": {"description": "OK"}}
+            }
+        },
+        "/events/{event_type}": {
+            "get": {
+                "summary": "Get events by type",
+                "parameters": [{"name": "event_type", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Events list"}}
+            }
+        },
+        "/data/{data_type}": {
+            "get": {
+                "summary": "Get processed data by type",
+                "parameters": [{"name": "data_type", "in": "path", "required": True, "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "Data list"}}
+            }
+        },   # ← MISSING COMMA HERE
+        "/api/crime": {
+            "get": {
+                "summary": "Get active crime data (paginated)",
+                "parameters": [
+                    {"name": "page", "in": "query", "schema": {"type": "integer"}},
+                    {"name": "page_size", "in": "query", "schema": {"type": "integer"}}
+                ],
+                "responses": {
+                    "200": {"description": "Paginated crime list"}
                 }
             }
         }
-    })
+    }
+})
 
 @app.route('/query-stub', methods=['GET'])
 def query_stub():
@@ -169,6 +181,75 @@ def query_stub():
     It just proves that the read_service has a query stub.
     """
     return jsonify({"message": "This is a query stub endpoint"})
+
+# crime data endpoint
+@app.route('/api/crime', methods=['GET'])
+def get_crime_data():
+    """
+    Retrieve active crime data from the `stlouis_gov_crime` table.
+
+    Query Parameters:
+        page (int): Page number (default: 1)
+        page_size (int): Items per page (default: 50)
+
+    Returns:
+        Paginated JSON list of active crime records, including:
+            - id
+            - created_on
+            - data_posted_on
+            - is_active
+            - other crime columns (dynamic)
+
+    Notes:
+        - Filters only active records (is_active = 1).
+        - Uses SQLAlchemy Core for safe parameterized queries.
+    """
+    from flask import request
+
+    # Pagination params
+    try:
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 50))
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    offset = (page - 1) * page_size
+
+    try:
+        db = SessionLocal()
+
+        # Count total active records
+        total_result = db.execute(text("""
+            SELECT COUNT(*) AS total 
+            FROM stlouis_gov_crime 
+            WHERE is_active = 1
+        """))
+        total = total_result.scalar()
+
+        # Fetch paginated rows
+        rows = db.execute(text("""
+            SELECT *
+            FROM stlouis_gov_crime
+            WHERE is_active = 1
+            ORDER BY data_posted_on DESC
+            LIMIT :limit OFFSET :offset
+        """), {"limit": page_size, "offset": offset})
+
+        crimes = [dict(row._mapping) for row in rows]
+        db.close()
+
+        return jsonify({
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size,
+            "crimes": crimes
+        })
+
+    except Exception as e:
+        app.logger.error(f"Crime query failed: {e}")
+        return jsonify({"error": "Failed to query crime data", "details": str(e)}), 500
+
     
 # Error handler for 404
 @app.errorhandler(404)
