@@ -108,8 +108,8 @@ def test_pdf():
         return render_template_string(html)
 
     except Exception as e:
-        logging.error(f"PDF test failed: {e}")
-        return {"error": str(e)}, 500
+        logging.error("PDF test failed", exc_info=True)
+        return {"error": "An internal error occurred while processing the PDF."}, 500
 
 
 @app.route('/health')
