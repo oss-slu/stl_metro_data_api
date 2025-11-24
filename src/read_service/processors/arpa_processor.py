@@ -37,7 +37,7 @@ def retrieve_from_database():
 
         # Connect to database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-        engine_url = f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+        engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
         engine = create_engine(engine_url, echo=True)
 
         session = Session(engine)
