@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
+from src.write_service.ingestion.json_fetcher import get_json
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
-PG_HOST = os.getenv('PG_HOST', 'postgres')
+# Test two different hosts: localhost (for local runs) and postgres (when running in Docker)
+PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
@@ -19,7 +21,7 @@ class Base(DeclarativeBase):
 
 # The ARPA funds table class
 class DataTable(Base):
-    __tablename__ = "arpa_funds_table"
+    __tablename__ = "ARPA_funds"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
     content = Column(JSON, nullable=False)
@@ -61,9 +63,11 @@ def retrieve_from_database():
     # Exceptions
     except SQLAlchemyError as e:
         print("An error occured when retreiving data from the database. \n " + str(e))
+        return "An error occured when retreiving data from the database. \n " + str(e)
 
     except Exception as e:
         print("An error occured when connecting to the database. \n " + str(e))
+        return "An error occured when connecting to the database. \n " + str(e)
 
 # Test saving data into database
 def save_into_database(data):
@@ -104,3 +108,12 @@ def save_into_database(data):
 
     except Exception as e:
         print("An error occured when connecting to the database. \n " + str(e))
+
+# Test function that saves real City of St. Louis data (ARPA funds) to the database
+# and then retrieves from the database
+if __name__ == "__main__":
+    testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
+    result = get_json(testURL)
+    save_into_database(result)
+    data = retrieve_from_database()
+    print(data)
