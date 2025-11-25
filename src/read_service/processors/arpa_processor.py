@@ -8,7 +8,8 @@ from src.write_service.ingestion.json_fetcher import get_json
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
-# Test two different hosts: localhost (for local runs) and postgres (when running in Docker)
+# Code will choose between two different hosts: 
+# localhost (for local runs) and postgres (when running in Docker)
 PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
