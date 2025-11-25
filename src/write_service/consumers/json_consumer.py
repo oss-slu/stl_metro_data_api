@@ -12,7 +12,9 @@ from src.write_service.processing.json_processor import send_data
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
-PG_HOST = os.getenv('PG_HOST', 'localhost')
+# Code will choose between two different hosts: 
+# localhost (for local runs) and postgres (when running in Docker)
+PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
@@ -137,7 +139,6 @@ def save_into_database(data, topic_name, topic_extended_name=None):
     # Exceptions
     except SQLAlchemyError as e:
         print("An error occured when connecting to the database. \n " + str(e))
-        session.rollback()
 
     except Exception as e:
         print("An error occured when saving to the database. \n " + str(e))
