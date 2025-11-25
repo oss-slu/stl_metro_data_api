@@ -12,12 +12,13 @@ Integrates with write_service via shared PG (CQRS separation).
 """
 
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+import requests
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -161,6 +162,23 @@ def swagger_spec():
         }
     })
 
+
+@app.route('/arpa')
+def get_arpa():
+    response = requests.get("https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json")
+    response.raise_for_status()
+
+    # Parse the data
+    data = response.json()
+
+    # Return the data
+    print(f"Data received successfully: \n {data}")
+    return data
+
+@app.route('/arpa.htm')
+def get_arpa_page():
+    return render_template("arpa.htm")
+
 @app.route('/query-stub', methods=['GET'])
 def query_stub():
     """
@@ -184,7 +202,7 @@ if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
     # This ensures that when the read-service starts, it also begins
     # simulating event consumption in the background.
-    from processors.events import start_mock_consumer
+    from src.read_service.processors.events import start_mock_consumer
     start_mock_consumer(app.logger)
 
     # Run the Flask app (debug mode = True for development only).
