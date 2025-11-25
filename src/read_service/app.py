@@ -206,4 +206,4 @@ if __name__ == '__main__':
     start_mock_consumer(app.logger)
 
     # Run the Flask app (debug mode = True for development only).
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001)
