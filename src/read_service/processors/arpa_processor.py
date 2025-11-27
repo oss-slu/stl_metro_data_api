@@ -64,11 +64,11 @@ def retrieve_from_database():
     # Exceptions
     except SQLAlchemyError as e:
         print("An error occured when retrieving data from the database. \n " + str(e))
-        return "An error occured when retrieving data from the database. \n " + str(e)
+        return "An error occured when retrieving data from the database."
 
     except Exception as e:
         print("An error occured when connecting to the database. \n " + str(e))
-        return "An error occured when connecting to the database. \n " + str(e)
+        return "An error occured when connecting to the database."
 
 # Test saving data into database
 def save_into_database(data):
