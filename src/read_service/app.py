@@ -69,7 +69,11 @@ def arpa():
     """
     result = retrieve_from_database()
     print(result)
-    return result
+    
+    if result is None:
+        return {}
+    else:
+        return result
 
 @app.route('/')
 def main():
