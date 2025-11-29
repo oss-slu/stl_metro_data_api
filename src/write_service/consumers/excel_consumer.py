@@ -59,7 +59,10 @@ TOPIC_TABLE_MAP = json.loads(os.getenv("TOPIC_TABLE_MAP", "{}") or "{}")
 
 # DB
 encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-PG_DSN = os.getenv("PG_DSN", "postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}")
+PG_DSN = os.getenv(
+    "PG_DSN",
+    f"postgresql+psycopg2://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}",
+)
 
 # Retry
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
@@ -326,8 +329,10 @@ def _add_missing_columns(tbl: Table, record: Dict[str, Any]) -> None:
 
     # Perform ALTER TABLE for missing columns
     with engine.begin() as conn:
+        dialect = conn.dialect
         for name, typ in to_add:
-            ddl = f'ALTER TABLE "{tbl.name}" ADD COLUMN "{name}" {typ().__visit_name__.upper()}'
+            coltype_sql = typ().compile(dialect=dialect)
+            ddl = f'ALTER TABLE "{tbl.name}" ADD COLUMN "{name}" {coltype_sql}'
             conn.exec_driver_sql(ddl)
             log.info("Added column %s.%s (%s)", tbl.name, name, typ.__name__)
 
@@ -335,6 +340,7 @@ def _add_missing_columns(tbl: Table, record: Dict[str, Any]) -> None:
     metadata.clear()
     metadata.reflect(bind=engine)
     _table_cache[tbl.name] = metadata.tables[tbl.name]
+    log.info("Refreshed metadata for %s; columns now: %s", tbl.name, ", ".join(c.name for c in _table_cache[tbl.name].columns))
 
 
 # Insert logic
@@ -420,52 +426,65 @@ def run():
     )
 
     for msg in consumer:
-        raw = msg.value
-
-        # 1) Decode JSON
+        log.info("Received message from partition %s at offset %s", msg.partition, msg.offset)
+        
         try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            log.warning("Bad JSON → DLQ")
-            producer.send(DLQ_TOPIC, {"error": "json_decode_error", "payload": raw})
-            continue
+            raw = msg.value
 
-        # 2) Normalize to list
-        records = data if isinstance(data, list) else [data]
-        if not records:
-            continue
-
-        # 3) Decide which table this batch belongs to
-        table_name = _resolve_table_name(msg.topic, records[0])
-        if not table_name:
-            log.warning("No table routing info for record → DLQ")
-            producer.send(DLQ_TOPIC, {"error": "routing_missing", "sample": records[0]})
-            continue
-
-        # 4) Ensure table exists and has needed columns
-        try:
-            table = _reflect_or_create_table(table_name, records[0])
-        except SQLAlchemyError as e:
-            log.error("Table init error → DLQ: %s", e)
-            producer.send(DLQ_TOPIC, {"error": "table_init", "table": table_name, "sample": records[0]})
-            continue
-
-        # 5) Insert with retries
-        attempt = 0
-        while True:
+            # 1) Decode JSON
             try:
-                n = _insert_rows(table, records)
-                log.info("Inserted %d rows into %s", n, table_name)
-                break
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                log.warning("Bad JSON → DLQ")
+                producer.send(DLQ_TOPIC, {"error": "json_decode_error", "payload": raw})
+                continue
+
+            # 2) Normalize to list
+            records = data if isinstance(data, list) else [data]
+            if not records:
+                continue
+
+            # 3) Decide which table this batch belongs to
+            table_name = _resolve_table_name(msg.topic, records[0])
+            if not table_name:
+                log.warning("No table routing info for record → DLQ")
+                producer.send(DLQ_TOPIC, {"error": "routing_missing", "sample": records[0]})
+                continue
+            log.info("Routing record to table %s", table_name)
+
+            # 4) Ensure table exists and has needed columns
+            try:
+                table = _reflect_or_create_table(table_name, records[0])
+                log.info("Table %s ready with columns: %s", table_name, ", ".join(c.name for c in table.columns))
             except SQLAlchemyError as e:
-                attempt += 1
-                if attempt >= MAX_RETRIES:
-                    log.error("DB failure after %d attempts → DLQ", attempt)
-                    producer.send(DLQ_TOPIC, {"error": "db_error", "table": table_name, "count": len(records)})
+                log.error("Table init error → DLQ: %s", e)
+                producer.send(DLQ_TOPIC, {"error": "table_init", "table": table_name, "sample": records[0]})
+                continue
+
+            # 5) Insert with retries
+            attempt = 0
+            while True:
+                try:
+                    log.info("About to insert %d rows into %s", len(records), table_name)
+                    n = _insert_rows(table, records)
+                    log.info("Inserted %d rows into %s", n, table_name)
                     break
-                backoff = min(2 ** attempt, 10)
-                log.warning("DB error (%s). Retrying in %ss...", e, backoff)
-                time.sleep(backoff)
+                except SQLAlchemyError as e:
+                    attempt += 1
+                    if attempt >= MAX_RETRIES:
+                        log.error("DB failure after %d attempts → DLQ", attempt)
+                        producer.send(DLQ_TOPIC, {"error": "db_error", "table": table_name, "count": len(records)})
+                        break
+                    backoff = min(2 ** attempt, 10)
+                    log.warning("DB error (%s). Retrying in %ss...", e, backoff)
+                    time.sleep(backoff)
+            
+            log.info("Finished processing message, continuing to poll for more...")
+        except Exception as e:
+            log.error("Unexpected error processing message at offset %s: %s", msg.offset, e, exc_info=True)
+            # Send to DLQ and continue
+            producer.send(DLQ_TOPIC, {"error": "unexpected_exception", "offset": msg.offset, "exception": str(e)})
+            continue
 
 if __name__ == "__main__":
     run()
