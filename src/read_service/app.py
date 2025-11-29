@@ -215,7 +215,7 @@ def business_citizen_api():
         return jsonify(data), 200
     except Exception as e:
         app.logger.error(f"Business/Citizen API error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
