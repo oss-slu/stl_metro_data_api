@@ -39,22 +39,29 @@ class StLouisCensusData(Base):
 
 # Add this to your existing models.py in write_service
 
-class StLouisBusinessCitizen(Base):
+class CSBServiceRequest(Base):
     """
-    Stores business/citizen service data from St. Louis services page.
-    Source: https://www.stlouis-mo.gov/services/
+    Stores CSB (Citizens' Service Bureau) 311 service request data.
+    Source: https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
+    Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
+    
+    This dataset provides access to Citizens' Service Bureau (CSB) service
+    requests using the Open311 spec. The CSB is the customer service 
+    department for the City of St. Louis.
     
     Columns:
     - id: Primary key
     - created_on: Record creation timestamp
-    - data_posted_on: When data was posted on source site
-    - is_active: Integer flag for active records (1=active, 0=inactive)
-    - contact_info: JSON field for contact details
-    - service_name: Name of the business/citizen service
-    - description: Service description
-    - raw_json: Complete data payload
+    - data_posted_on: When service request was initiated
+    - is_active: Integer flag for active records (1=active, 0=inactive/closed)
+    - service_name: Service request type (PROBLEMCODE)
+    - contact_info: JSON field for caller info, address, ward, etc.
+    - description: Service request description
+    - source_url: Link to original dataset
+    - raw_json: Complete data payload from CSV
+    - ingested_at: When record was inserted into database
     """
-    __tablename__ = "stlouis_business_citizen"
+    __tablename__ = "csb_service_requests" # Citizens' Service Bureau is customer service department for STL
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_on = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -65,7 +72,7 @@ class StLouisBusinessCitizen(Base):
     service_name = Column(String, nullable=True)
     contact_info = Column(JSON, nullable=True)  # Store phone, email, address as JSON
     description = Column(String, nullable=True)
-    source_url = Column(String, default='https://www.stlouis-mo.gov/services/', nullable=True)
+    source_url = Column(String, default='https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5', nullable=True)
     
     raw_json = Column(JSON, nullable=False)  # Store complete data
     ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
