@@ -21,6 +21,12 @@ from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from dotenv import load_dotenv
+
+try: 
+    load_dotenv()
+except ImportError:
+    pass
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -255,7 +261,7 @@ def get_csb_services():  # ← Optionally rename function too
         return jsonify(data), 200
     except Exception as e:
         app.logger.error(f"CSB Service API error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
     
 def open_browser():
     """Open Swagger UI in browser."""
@@ -273,4 +279,5 @@ if __name__ == '__main__':
     threading.Thread(target=open_browser, daemon=True).start()
 
     # Run the Flask app (debug mode = True for development only).
-    app.run(host='0.0.0.0', port=5003, debug=True)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=5003, debug=debug_mode)
