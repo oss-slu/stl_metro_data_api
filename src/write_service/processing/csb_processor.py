@@ -64,9 +64,9 @@ def produce_csb_data(csv_files):
                     # Determine if active
                     is_active = 1
                     if (
-                        row.get('DATECANCELLED', '').strip() or
-                        row.get('DATETIMECLOSED', '').strip() or
-                        row.get('STATUS', '').strip().upper() in ['CLOSED', 'CANCELLED', 'COMPLETED']
+                        row.get('DATECANCELLED', '').strip()
+                        or row.get('DATETIMECLOSED', '').strip()
+                        or row.get('STATUS', '').strip().upper() in ['CLOSED', 'CANCELLED', 'COMPLETED']
                     ):
                         is_active = 0
                     
