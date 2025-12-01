@@ -63,9 +63,11 @@ def produce_csb_data(csv_files):
                 try:
                     # Determine if active
                     is_active = 1
-                    if (row.get('DATECANCELLED', '').strip() or 
+                    if (
+                        row.get('DATECANCELLED', '').strip() or 
                         row.get('DATETIMECLOSED', '').strip() or
-                        row.get('STATUS', '').strip().upper() in ['CLOSED', 'CANCELLED', 'COMPLETED']):
+                        row.get('STATUS', '').strip().upper() in ['CLOSED', 'CANCELLED', 'COMPLETED']
+                    ):
                         is_active = 0
                     
                     # Create message payload
@@ -106,7 +108,6 @@ def produce_csb_data(csv_files):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    from pathlib import Path
     
     # Example: process files from fetcher
     csv_files = list(Path("data/downloads").glob("*.csv"))
