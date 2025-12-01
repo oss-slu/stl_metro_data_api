@@ -223,7 +223,7 @@ def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/csb", methods=["GET"])
-def get_csb_services():  # ← Optionally rename function too
+def get_csb_services():
     """
     GET endpoint for active CSB (Citizens' Service Bureau) service requests.
     
@@ -252,11 +252,11 @@ def get_csb_services():  # ← Optionally rename function too
             https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
     Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
     """
-    from processors.csb_service_processor import get_csb_service_data  # ← UPDATED IMPORT
+    from processors.csb_service_processor import get_csb_service_data
     
     try:
         db = SessionLocal()
-        data = get_csb_service_data(db)  # ← UPDATED FUNCTION NAME
+        data = get_csb_service_data(db)
         db.close()
         return jsonify(data), 200
     except Exception as e:
