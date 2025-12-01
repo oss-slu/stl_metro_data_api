@@ -18,6 +18,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from flask_cors import CORS
 import requests
 
 # Environment vars
@@ -35,6 +36,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Initialize Flask app
 app = Flask(__name__)
 api = Api(app)
+# Use Flask CORS to allow connections from other sites
+CORS(app)
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -165,19 +168,17 @@ def swagger_spec():
 
 @app.route('/arpa')
 def get_arpa():
+    print("Getting JSON data from City website...")
     response = requests.get("https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json")
     response.raise_for_status()
 
+    print("Parsing the JSON data from City website...")
     # Parse the data
     data = response.json()
 
     # Return the data
     print(f"Data received successfully: \n {data}")
     return data
-
-@app.route('/arpa.htm')
-def get_arpa_page():
-    return render_template("arpa.htm")
 
 @app.route('/query-stub', methods=['GET'])
 def query_stub():
