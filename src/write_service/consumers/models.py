@@ -1,63 +1,71 @@
-# src/write_service/consumers/models.py
-"""
-Database models for storing web-scraped data.
-"""
-
-from sqlalchemy import Column, Integer, String, DateTime, JSON, create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timezone
+# models.py
 import os
+import logging
+import urllib
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, Integer, DateTime, JSON, Boolean, create_engine
+from sqlalchemy.orm import declarative_base
 from dotenv import load_dotenv
-import urllib  
 
-load_dotenv()
-
+load_dotenv(override=True)
 
 Base = declarative_base()
-PG_HOST = os.getenv('PG_HOST', 'postgres')
-PG_PORT = os.getenv('PG_PORT', '5432')
+logger = logging.getLogger(__name__)
+
+PG_HOST = os.getenv('PG_HOST', 'localhost')
+PG_PORT = os.getenv('PG_PORT', '5433')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
+PG_PASSWORD = os.getenv('PG_PASSWORD', 'Welcome123456')
 
-class StLouisCensusData(Base):
-    """
-    Stores census data from St. Louis government website
-    Columns:
-    - id: auto incrementing key
-    - raw_json: complete Kafka message as JSON
-    - ingested_at: timestamp of insertion
-    """
-    __tablename__ = "stlouis_gov_census" # each row/entry is a table
 
-    id = Column(Integer, primary_key=True, autoincrement=True) 
-    # title = Column(String, ) # pull out title from each table
-    # isActive, default false, when add new stuff into table, deactivate old rows if new rows are succesfully added
-    raw_json = Column(JSON, nullable=False) # Store the entire kafka message
-    ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-
-def get_db_engine():  # create database engine from .env config
+def get_db_engine():
+    """Return a SQLAlchemy engine and ensure ORM tables exist."""
     encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
     db_url = os.getenv(
         "DATABASE_URL",
-        f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}",
+        f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
     )
-    logger = __import__("logging").getLogger(__name__)
-    logger.info("Connecting to database: %s", db_url.split("@")[1] if "@" in db_url else db_url)
+    logger.info("Connecting: %s", db_url.split("@")[1] if "@" in db_url else db_url)
 
-    engine = create_engine(db_url)
-
-    # Ensure tables exist (idempotent). If the DB isn't ready, surface a clear warning.
+    engine = create_engine(db_url, echo=True)
     try:
         create_tables(engine)
-        logger.info("Ensured ORM tables exist (create_tables).")
     except Exception as e:
-        # Keep the engine returnable even if create_tables failed; tests or caller
-        # can retry or surface the connection error. Log a clear message.
-        logger.warning("Failed to create tables during engine init: %s", e)
+        logger.warning("Failed creating tables: %s", e)
 
     return engine
 
-def create_tables(engine): # create all tables if they don't exist"
+
+class StLouisCrimeStats(Base):
+    """
+    for NIBRS Crime Files sourced from https://slmpd.org/stats/
+
+    Columns:
+        id (PK)
+        created_on      - record created timestamp
+        data_posted_on  - timestamp from source
+        is_active       - only active records should be returned
+        raw_json        - JSON of original record
+    """
+    __tablename__ = "stlouis_gov_crime"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_on = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    data_posted_on = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    raw_json = Column(JSON, nullable=False)
+
+
+class StLouisCensusData(Base):
+    """Stores census data from St. Louis government website"""
+    __tablename__ = "stlouis_gov_census"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    raw_json = Column(JSON, nullable=False)
+    ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+def create_tables(engine):
+    """Create all tables if not present."""
     Base.metadata.create_all(engine)

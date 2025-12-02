@@ -21,7 +21,7 @@ from sqlalchemy.exc import OperationalError
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
-PG_PORT = os.getenv('PG_PORT', '5432')
+PG_PORT = os.getenv('PG_PORT', '5433')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', 'example_pass')
@@ -157,7 +157,7 @@ def swagger_spec():
                 "parameters": [{"name": "data_type", "in": "path", "required": True, "schema": {"type": "string"}}],
                 "responses": {"200": {"description": "Data list"}}
             }
-        },   # ← MISSING COMMA HERE
+        },
         "/api/crime": {
             "get": {
                 "summary": "Get active crime data (paginated)",
@@ -182,31 +182,22 @@ def query_stub():
     """
     return jsonify({"message": "This is a query stub endpoint"})
 
-# crime data endpoint
+
 @app.route('/api/crime', methods=['GET'])
 def get_crime_data():
     """
     Retrieve active crime data from the `stlouis_gov_crime` table.
 
     Query Parameters:
-        page (int): Page number (default: 1)
-        page_size (int): Items per page (default: 50)
+      - page (int): Page number (default=1)
+      - page_size (int): Results per page (default=50)
 
     Returns:
-        Paginated JSON list of active crime records, including:
-            - id
-            - created_on
-            - data_posted_on
-            - is_active
-            - other crime columns (dynamic)
-
-    Notes:
-        - Filters only active records (is_active = 1).
-        - Uses SQLAlchemy Core for safe parameterized queries.
+      Paginated JSON list of crime records.
     """
     from flask import request
 
-    # Pagination params
+    # Validate pagination parameters
     try:
         page = int(request.args.get("page", 1))
         page_size = int(request.args.get("page_size", 50))
@@ -218,24 +209,21 @@ def get_crime_data():
     try:
         db = SessionLocal()
 
-        # Count total active records
-        total_result = db.execute(text("""
-            SELECT COUNT(*) AS total 
-            FROM stlouis_gov_crime 
-            WHERE is_active = 1
-        """))
-        total = total_result.scalar()
+        # Count active records
+        total = db.execute(text("""
+            SELECT COUNT(*) FROM stlouis_gov_crime WHERE is_active = 1
+        """)).scalar()
 
-        # Fetch paginated rows
+        # Fetch paginated active crime rows
         rows = db.execute(text("""
-            SELECT *
-            FROM stlouis_gov_crime
+            SELECT * FROM stlouis_gov_crime
             WHERE is_active = 1
             ORDER BY data_posted_on DESC
             LIMIT :limit OFFSET :offset
         """), {"limit": page_size, "offset": offset})
 
-        crimes = [dict(row._mapping) for row in rows]
+        crimes = [dict(r._mapping) for r in rows]
+
         db.close()
 
         return jsonify({
@@ -248,7 +236,7 @@ def get_crime_data():
 
     except Exception as e:
         app.logger.error(f"Crime query failed: {e}")
-        return jsonify({"error": "Failed to query crime data", "details": str(e)}), 500
+        return jsonify({"error": "Failed to query crime data"}), 500
 
     
 # Error handler for 404
