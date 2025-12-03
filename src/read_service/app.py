@@ -14,10 +14,12 @@ Integrates with write_service via shared PG (CQRS separation).
 import os
 from flask import Flask, jsonify
 from flask_restful import Api
+from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from flask import send_from_directory
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -33,6 +35,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
 
 # Make sure INFO-level logs (like from the mock consumer) show up
@@ -169,6 +172,10 @@ def query_stub():
     It just proves that the read_service has a query stub.
     """
     return jsonify({"message": "This is a query stub endpoint"})
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'csb-dashboard.html')
     
 # Error handler for 404
 @app.errorhandler(404)
@@ -188,4 +195,4 @@ if __name__ == '__main__':
     start_mock_consumer(app.logger)
 
     # Run the Flask app (debug mode = True for development only).
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5003, debug=True)
