@@ -15,6 +15,7 @@ import os
 import urllib.parse
 from flask import Flask, jsonify
 from flask_restful import Api
+from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -37,6 +38,10 @@ building_permits_bp = create_building_permits_blueprint(SessionLocal)
 # Initialize Flask app
 app = Flask(__name__)
 api = Api(app)
+
+# Enable CORS so frontend on port 9000 can call this API
+# Keeping it simple and allowing all origins for this project:
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")

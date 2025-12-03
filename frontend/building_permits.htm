@@ -1,11 +1,6 @@
 <html>
     <head>
-        <title>Building Permits</title>
-
-        <!-- DataTables + jQuery -->
-        <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+        <title>Building Permits by Neighborhood</title>
 
         <style>
             .header {
@@ -50,166 +45,139 @@
         </style>
 
         <script>
-        // When the webpage loads, call the following code...
-        window.onload = (event) => {
-            var table = document.getElementById("data-table");
+        window.onload = () => {
+            const statusEl = document.getElementById("status-text");
+            const tableContainer = document.getElementById("content");
+            const tbody = document.querySelector("#data-table tbody");
 
-            // Frontend on 9000 → backend on 5001
-            // Endpoint path is /api/building
-            // Add a bigger page_size so we see more rows at once
-            var baseUrl = window.location.origin.replace("9000", "5001");
-            var URL = baseUrl + "/api/building?page=1&page_size=200";
+            // Hardcode backend URL since Swagger works at localhost:5001
+            const URL = "http://localhost:5001/api/building?page=1&page_size=200";
 
-            var table_container = document.getElementById("content");
-            table_container.style.display = "none";
+            // Show what we’re about to do
+            statusEl.innerHTML = "<b>Requesting " + URL + " ...</b>";
+            tableContainer.style.display = "none";
 
-            // Set up DataTable with real JSON keys
-            let data_table = new DataTable("#data-table", {
-                order: [[5, "desc"]],  // sort by data_posted_on desc (col index 5 below)
-                processing: true,
-                columns: [
-                    {
-                        data: "id",
-                        defaultContent: "N/A",
-                        type: "num"
-                    },
-                    {
-                        data: "neighborhood",
-                        defaultContent: "N/A",
-                        type: "string-utf8"
-                    },
-                    {
-                        data: "total_permits",
-                        defaultContent: "N/A",
-                        type: "num"
-                    },
-                    {
-                        data: "total_value",
-                        defaultContent: "N/A",
-                        type: "num-fmt",
-                        // display currency with $
-                        render: function (val, type, row) {
-                            if (val == null) return "N/A";
-                            return DataTable.render.number(null, null, 2, '$')(val, type, row);
-                        }
-                    },
-                    {
-                        data: "avg_days_to_issue",
-                        defaultContent: "N/A",
-                        type: "num"
-                    },
-                    {
-                        data: "data_posted_on",
-                        defaultContent: "N/A",
-                        type: "date"
-                    },
-                    {
-                        data: "created_on",
-                        defaultContent: "N/A",
-                        type: "date"
-                    },
-                    {
-                        data: "is_active",
-                        defaultContent: "N/A",
-                        render: function (val, type, row) {
-                            if (val === true || val === 1 || val === "1") return "Active";
-                            if (val === false || val === 0 || val === "0") return "Inactive";
-                            return String(val);
-                        }
-                    }
-                ]
-            });
+            const xhr = new XMLHttpRequest();
 
-            const xmlhttp = new XMLHttpRequest();
-            xmlhttp.onload = function() {
+            xhr.onreadystatechange = function () {
+                // readyState 4 = done
+                if (xhr.readyState !== 4) return;
+
+                // Non-200 -> show error text
+                if (xhr.status !== 200) {
+                    statusEl.innerHTML =
+                        "<b style='color:red;'>Error " + xhr.status + " from backend:<br>" +
+                        xhr.responseText + "</b>";
+                    return;
+                }
+
                 try {
-                    document.getElementById("status-text").innerHTML = "<b>Loading table...</b>";
+                    const raw = JSON.parse(xhr.responseText);
+                    console.log("Raw /api/building response:", raw);
 
-                    var raw = JSON.parse(this.responseText);
-                    // unwrap pagination envelope
-                    var rows = raw.results || [];
-                    var page = raw.page || 1;
-                    var page_size = raw.page_size || rows.length;
-                    var total = raw.total || rows.length;
-                    var total_pages = page_size > 0 ? Math.ceil(total / page_size) : 1;
+                    const rows = raw.results || [];
+                    const page = raw.page || 1;
+                    const pageSize = raw.page_size || rows.length || 1;
+                    const total = raw.total || rows.length;
+                    const totalPages = Math.ceil(total / pageSize);
 
-                    for (let i = 0; i < rows.length; i++) {
-                        var entity = rows[i];
+                    // Clear any old rows
+                    tbody.innerHTML = "";
 
-                        // These keys match your Python mapping exactly
-                        data_table.row.add({
-                            id: entity["id"],
-                            neighborhood: entity["neighborhood"],
-                            total_permits: entity["total_permits"],
-                            total_value: entity["total_value"],
-                            avg_days_to_issue: entity["avg_days_to_issue"],
-                            data_posted_on: entity["data_posted_on"],
-                            created_on: entity["created_on"],
-                            is_active: entity["is_active"]
-                        });
+                    // Fill table
+                    for (const entity of rows) {
+                        const tr = document.createElement("tr");
 
-                        console.log(
-                            "Added building permit row " +
-                            String(entity["id"]) +
-                            " (" + String(entity["neighborhood"]) + ")"
-                        );
+                        function cell(val) {
+                            const td = document.createElement("td");
+                            td.textContent = (val === null || val === undefined) ? "N/A" : val;
+                            return td;
+                        }
+
+                        tr.appendChild(cell(entity.id));
+                        tr.appendChild(cell(entity.neighborhood));
+                        tr.appendChild(cell(entity.total_permits));
+                        tr.appendChild(cell(entity.total_value));
+                        tr.appendChild(cell(entity.avg_days_to_issue));
+                        tr.appendChild(cell(entity.data_posted_on));
+                        tr.appendChild(cell(entity.created_on));
+                        tr.appendChild(cell(
+                            entity.is_active === true || entity.is_active === 1 || entity.is_active === "1"
+                                ? "Active"
+                                : "Inactive"
+                        ));
+
+                        tbody.appendChild(tr);
                     }
 
-                    data_table.columns.adjust().draw();
-                    table_container.style.display = "block";
+                    if (rows.length === 0) {
+                        statusEl.innerHTML =
+                            "<b>No building permit rows returned (page " + page +
+                            " of " + totalPages + ").</b>";
+                    } else {
+                        statusEl.innerHTML =
+                            "<b>Showing " + rows.length + " active building-permit rows " +
+                            "(page " + page + " of " + totalPages +
+                            ", total " + total + ").</b>";
+                    }
 
-                    document.getElementById("status-text").innerHTML =
-                        "<b>Showing " + rows.length + " active building-permit summary rows (page " +
-                        page + " of " + total_pages + ", total " + total + ").</b>";
-                } catch (error) {
-                    alert("Something went wrong when processing the data!\n" + String(error));
+                    tableContainer.style.display = "block";
+                } catch (e) {
+                    console.error("JSON/DOM error:", e);
+                    statusEl.innerHTML =
+                        "<b style='color:red;'>Error processing JSON from backend: " +
+                        String(e) + "</b>";
                 }
             };
 
+            xhr.onerror = function () {
+                statusEl.innerHTML =
+                    "<b style='color:red;'>Network error calling " + URL + ".</b>";
+            };
+
             try {
-                xmlhttp.open("GET", URL);
-                xmlhttp.send();
-            } catch (error) {
-                alert("Something went wrong when connecting to the back-end!\n" + String(error));
+                xhr.open("GET", URL);
+                xhr.send();
+            } catch (e) {
+                statusEl.innerHTML =
+                    "<b style='color:red;'>Failed to start XHR: " + String(e) + "</b>";
             }
         };
-
-    </script>
+        </script>
     </head>
     <body>
         <h1>Building Permits by Neighborhood</h1>
         <br>
         <div>
             <div class="header">Results<br></div>
-                <br>
-                <a href="index.htm">Return to home page</a>
-                <br>
-                <div style="text-align: center;" id="status-text"><b>Loading data and table...</b></div>
-                <br><br>
-                <div id="content">
-                    <table class="display" id="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Neighborhood</th>
-                                <th>Total Permits</th>
-                                <th>Total Value</th>
-                                <th>Avg Days to Issue</th>
-                                <th>Date Posted</th>
-                                <th>Row Created</th>
-                                <th>Active?</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+            <br>
+            <a href="index.htm">Return to home page</a>
+            <br>
+            <div style="text-align: center;" id="status-text"><b>Loading data and table...</b></div>
+            <br><br>
+            <div id="content">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Neighborhood</th>
+                            <th>Total Permits</th>
+                            <th>Total Value</th>
+                            <th>Avg Days to Issue</th>
+                            <th>Date Posted</th>
+                            <th>Row Created</th>
+                            <th>Active?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
                 <br><br>
             </div>
         </div>
-        <br>
-        <br>
-        <br>
-        <br>
+
+        <br><br><br><br>
 
         <footer>
             <hr>
