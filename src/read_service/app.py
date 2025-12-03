@@ -12,12 +12,15 @@ Integrates with write_service via shared PG (CQRS separation).
 """
 
 import os
+import urllib.parse
 from flask import Flask, jsonify
 from flask_restful import Api
+from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from api.building_permits import create_building_permits_blueprint
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -30,10 +33,15 @@ PG_PASSWORD = os.getenv('PG_PASSWORD', 'example_pass')
 engine_url = f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+building_permits_bp = create_building_permits_blueprint(SessionLocal)
 
 # Initialize Flask app
 app = Flask(__name__)
 api = Api(app)
+
+# Enable CORS so frontend on port 9000 can call this API
+# Keeping it simple and allowing all origins for this project:
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -60,6 +68,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 
 # Register the blueprint
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+app.register_blueprint(building_permits_bp)
 
 # Basic health check endpoint (Query side: Check PG connection)
 @app.route('/health', methods=['GET'])
@@ -156,6 +165,31 @@ def swagger_spec():
                     "summary": "Get processed data by type",
                     "parameters": [{"name": "data_type", "in": "path", "required": True, "schema": {"type": "string"}}],
                     "responses": {"200": {"description": "Data list"}}
+                }
+            },
+
+            "/api/building": {
+                "get": {
+                    "summary": "Get active building permit records (paginated)",
+                    "parameters": [
+                        {
+                            "name": "page",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 1},
+                            "description": "1-based page number"
+                        },
+                        {
+                            "name": "page_size",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "integer", "default": 50},
+                            "description": "Number of records per page (max 200)"
+                        }
+                    ],
+                    "responses": {
+                        "200": {"description": "Paginated list of active building permits"}
+                    }
                 }
             }
         }

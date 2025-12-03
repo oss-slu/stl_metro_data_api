@@ -1,0 +1,190 @@
+<html>
+    <head>
+        <title>Building Permits by Neighborhood</title>
+
+        <style>
+            .header {
+                font-weight: bold;
+                padding: 20px;
+                background-color: beige;
+            }
+
+            .details {
+                padding: 10px;
+                background-color: lightgreen;
+            }
+
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14pt;
+                padding: auto;
+            }
+
+            h1 {
+                color: green;
+            }
+
+            #data-table th {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: lightblue;
+                color: black;
+            }
+
+            #data-table {
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            #data-table td, th {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+        </style>
+
+        <script>
+        window.onload = () => {
+            const statusEl = document.getElementById("status-text");
+            const tableContainer = document.getElementById("content");
+            const tbody = document.querySelector("#data-table tbody");
+
+            // Hardcode backend URL since Swagger works at localhost:5001
+            const URL = "http://localhost:5001/api/building?page=1&page_size=200";
+
+            // Show what we’re about to do
+            statusEl.innerHTML = "<b>Requesting " + URL + " ...</b>";
+            tableContainer.style.display = "none";
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function () {
+                // readyState 4 = done
+                if (xhr.readyState !== 4) return;
+
+                // Non-200 -> show error text
+                if (xhr.status !== 200) {
+                    statusEl.innerHTML =
+                        "<b style='color:red;'>Error " + xhr.status + " from backend:<br>" +
+                        xhr.responseText + "</b>";
+                    return;
+                }
+
+                try {
+                    const raw = JSON.parse(xhr.responseText);
+                    console.log("Raw /api/building response:", raw);
+
+                    const rows = raw.results || [];
+                    const page = raw.page || 1;
+                    const pageSize = raw.page_size || rows.length || 1;
+                    const total = raw.total || rows.length;
+                    const totalPages = Math.ceil(total / pageSize);
+
+                    // Clear any old rows
+                    tbody.innerHTML = "";
+
+                    // Fill table
+                    for (const entity of rows) {
+                        const tr = document.createElement("tr");
+
+                        function cell(val) {
+                            const td = document.createElement("td");
+                            td.textContent = (val === null || val === undefined) ? "N/A" : val;
+                            return td;
+                        }
+
+                        tr.appendChild(cell(entity.id));
+                        tr.appendChild(cell(entity.neighborhood));
+                        tr.appendChild(cell(entity.total_permits));
+                        tr.appendChild(cell(entity.total_value));
+                        tr.appendChild(cell(entity.avg_days_to_issue));
+                        tr.appendChild(cell(entity.data_posted_on));
+                        tr.appendChild(cell(entity.created_on));
+                        tr.appendChild(cell(
+                            entity.is_active === true || entity.is_active === 1 || entity.is_active === "1"
+                                ? "Active"
+                                : "Inactive"
+                        ));
+
+                        tbody.appendChild(tr);
+                    }
+
+                    if (rows.length === 0) {
+                        statusEl.innerHTML =
+                            "<b>No building permit rows returned (page " + page +
+                            " of " + totalPages + ").</b>";
+                    } else {
+                        statusEl.innerHTML =
+                            "<b>Showing " + rows.length + " active building-permit rows " +
+                            "(page " + page + " of " + totalPages +
+                            ", total " + total + ").</b>";
+                    }
+
+                    tableContainer.style.display = "block";
+                } catch (e) {
+                    console.error("JSON/DOM error:", e);
+                    statusEl.innerHTML =
+                        "<b style='color:red;'>Error processing JSON from backend: " +
+                        String(e) + "</b>";
+                }
+            };
+
+            xhr.onerror = function () {
+                statusEl.innerHTML =
+                    "<b style='color:red;'>Network error calling " + URL + ".</b>";
+            };
+
+            try {
+                xhr.open("GET", URL);
+                xhr.send();
+            } catch (e) {
+                statusEl.innerHTML =
+                    "<b style='color:red;'>Failed to start XHR: " + String(e) + "</b>";
+            }
+        };
+        </script>
+    </head>
+    <body>
+        <h1>Building Permits by Neighborhood</h1>
+        <br>
+        <div>
+            <div class="header">Results<br></div>
+            <br>
+            <a href="index.htm">Return to home page</a>
+            <br>
+            <div style="text-align: center;" id="status-text"><b>Loading data and table...</b></div>
+            <br><br>
+            <div id="content">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Neighborhood</th>
+                            <th>Total Permits</th>
+                            <th>Total Value</th>
+                            <th>Avg Days to Issue</th>
+                            <th>Date Posted</th>
+                            <th>Row Created</th>
+                            <th>Active?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+                <br><br>
+            </div>
+        </div>
+
+        <br><br><br><br>
+
+        <footer>
+            <hr>
+            <p>
+                <span id="year"></span> SLU Open Source <br>
+                <script>document.getElementById("year").innerHTML = new Date().getFullYear();</script>
+            </p>
+        </footer>
+    </body>
+</html>
