@@ -194,5 +194,6 @@ if __name__ == '__main__':
     from processors.events import start_mock_consumer
     start_mock_consumer(app.logger)
 
-    # Run the Flask app (debug mode = True for development only).
-    app.run(host='0.0.0.0', port=5003, debug=True)
+    # Run the Flask app (debug mode can be enabled via FLASK_DEBUG env var)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ('1', 'true', 'yes')
+    app.run(host='0.0.0.0', port=5003, debug=debug_mode)
