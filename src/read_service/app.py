@@ -267,7 +267,7 @@ def open_browser():
     """Open Swagger UI in browser."""
     import time
     time.sleep(1.5)
-    webbrowser.open('http://127.0.0.1:5003/swagger') 
+    webbrowser.open('http://127.0.0.1:5001/swagger') 
 
 if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
@@ -280,4 +280,4 @@ if __name__ == '__main__':
 
     # Run the Flask app (debug mode = True for development only).
     debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
-    app.run(host='0.0.0.0', port=5003, debug=debug_mode)
+    app.run(host='0.0.0.0', port=5001, debug=debug_mode)

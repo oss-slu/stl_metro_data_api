@@ -61,7 +61,7 @@ services:
       context: ../
       dockerfile: docker/write_service/Dockerfile
     ports:
-      - "5002:5000"
+      - "5000:5000"
 
   read_service:
     build:
