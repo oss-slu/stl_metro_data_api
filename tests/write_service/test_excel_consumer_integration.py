@@ -42,7 +42,7 @@ def test_end_to_end_kafka_to_postgres(tmp_path):
     env["DLQ_TOPIC"] = "processed.excel.data.dlq"
 
     # ---------- Postgres connection (matches docker-compose.test.yml) ----------
-    PG_HOST = os.getenv('PG_HOST', 'localhost')
+    PG_HOST = os.getenv('PG_HOST', '127.0.0.1')
     PG_PORT = os.getenv('PG_PORT', '5433')
     PG_DB = os.getenv('PG_DB', 'stl_data')
     PG_USER = os.getenv('PG_USER', 'postgres')
