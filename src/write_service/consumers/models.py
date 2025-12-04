@@ -27,7 +27,7 @@ def get_db_engine():
         "DATABASE_URL",
         f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
     )
-    logger.info("Connecting: %s", db_url.split("@")[1] if "@" in db_url else db_url)
+    logger.info("Connecting to PostgreSQL at host %s:%s", PG_HOST, PG_PORT)
 
     engine = create_engine(db_url, echo=True)
     try:
