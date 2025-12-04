@@ -109,7 +109,7 @@ def test_pdf():
 
     except Exception as e:
         logging.error(f"PDF test failed: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Internal server error"}, 500
 
 
 @app.route('/health')
