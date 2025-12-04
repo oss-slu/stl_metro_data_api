@@ -9,6 +9,8 @@ from sqlalchemy import cast, create_engine
 from sqlalchemy.orm import sessionmaker
 import sys
 import pathlib
+import os
+import uuid
 
 # ADD SRC TO PATH FIRST (before any src imports!)
 ROOT_SRC = pathlib.Path(__file__).resolve().parents[2] / "src"
@@ -124,20 +126,26 @@ def test_consumer_with_real_kafka():
     initial_count = session.query(StLouisCensusData).count()
     session.close()
     
-    # Send test message
+    # Send test message (force IPv4 and use a unique consumer group for determinism)
+    os.environ["KAFKA_BOOTSTRAP"] = "127.0.0.1:9092"  # force IPv4 for producer/consumer
+
+    unique_group = f"it-web-{uuid.uuid4().hex[:8]}"
+
     producer = KafkaProducer(
-        bootstrap_servers="localhost:9092",
+        bootstrap_servers="127.0.0.1:9092",
         value_serializer=lambda v: json.dumps(v).encode("utf-8")
     )
-    
+
     test_data = {"neighborhood": "Test Integration", "population": 9999}
     producer.send("processed.web.data", test_data)
     producer.flush()
     producer.close()
-    
-    # Consume it
-    time.sleep(2)
-    consume_web_data(topic="processed.web.data", max_messages=1)
+
+    # Give Kafka a short moment to commit the message
+    time.sleep(3)
+
+    # Consume it with a fresh unique consumer group so we always read the new message
+    consume_web_data(topic="processed.web.data", max_messages=1, group_id=unique_group)
     
     # Check count increased
     session = Session()
