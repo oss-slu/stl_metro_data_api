@@ -155,6 +155,18 @@ def swagger_spec():
                     "responses": {"200": {"description": "OK"}}
                 }
             },
+            "/api/crime": {
+                "get": {
+                    "summary": "Get active crime data (paginated)",
+                    "parameters": [
+                        {"name": "page", "in": "query", "schema": {"type": "integer"}},
+                        {"name": "page_size", "in": "query", "schema": {"type": "integer"}}
+                    ],
+                    "responses": {
+                        "200": {"description": "Paginated crime list"}
+                    }
+                }
+            },
             "/csb": {
                 "get": {
                     "summary": "Get active CSB service requests",
@@ -200,45 +212,9 @@ def swagger_spec():
                     "responses": {"200": {"description": "Data list"}}
                 }
             }
+            
         }
     })
-    "openapi": "3.0.0",
-    "info": {"title": "STL Data API Read Service", "version": "1.0.0"},
-    "paths": {
-        "/health": {
-            "get": {
-                "summary": "Health check",
-                "responses": {"200": {"description": "OK"}}
-            }
-        },
-        "/events/{event_type}": {
-            "get": {
-                "summary": "Get events by type",
-                "parameters": [{"name": "event_type", "in": "path", "required": True, "schema": {"type": "string"}}],
-                "responses": {"200": {"description": "Events list"}}
-            }
-        },
-        "/data/{data_type}": {
-            "get": {
-                "summary": "Get processed data by type",
-                "parameters": [{"name": "data_type", "in": "path", "required": True, "schema": {"type": "string"}}],
-                "responses": {"200": {"description": "Data list"}}
-            }
-        },
-        "/api/crime": {
-            "get": {
-                "summary": "Get active crime data (paginated)",
-                "parameters": [
-                    {"name": "page", "in": "query", "schema": {"type": "integer"}},
-                    {"name": "page_size", "in": "query", "schema": {"type": "integer"}}
-                ],
-                "responses": {
-                    "200": {"description": "Paginated crime list"}
-                }
-            }
-        }
-    }
-})
 
 @app.route('/query-stub', methods=['GET'])
 def query_stub():
