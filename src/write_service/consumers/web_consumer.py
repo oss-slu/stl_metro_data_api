@@ -34,6 +34,7 @@ def retry_database_operation(func, max_retries=3, delay=2):
             time.sleep(delay)
 
 def consume_web_data(topic="processed.web.data", max_messages=None, group_id=None):
+def consume_web_data(topic="processed.web.data", max_messages=None, group_id=None):
     """Consume messages from Kafka and store in PostgreSQL"""
     # 1. Setup database
     engine = get_db_engine()
@@ -42,6 +43,8 @@ def consume_web_data(topic="processed.web.data", max_messages=None, group_id=Non
     # 2. Setup Kafka consumer
     bootstrap = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
 
+    # Use a transient consumer (no group) by default in tests to avoid committed-offsets.
+    # Pass group_id explicitly if you want group behavior.
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=bootstrap,
