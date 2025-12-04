@@ -8,12 +8,12 @@ def client():
         yield client
 
 def seed_test_data():
-    """Insert mock rows into stlouis_gov_crime."""
+    """Insert mock rows into stlouis_gov_crime_new."""
     with engine.begin() as conn:
-        conn.execute(text("DELETE FROM stlouis_gov_crime"))
+        conn.execute(text("DELETE FROM stlouis_gov_crime_new"))
 
         conn.execute(text("""
-            INSERT INTO stlouis_gov_crime 
+            INSERT INTO stlouis_gov_crime_new 
             (id, created_on, data_posted_on, is_active, description)
             VALUES
             (1, NOW(), NOW(), 1, 'Test Crime Active'),

@@ -186,7 +186,7 @@ def query_stub():
 @app.route('/api/crime', methods=['GET'])
 def get_crime_data():
     """
-    Retrieve active crime data from the `stlouis_gov_crime` table.
+    Retrieve active crime data from the `stlouis_gov_crime_new` table.
 
     Query Parameters:
       - page (int): Page number (default=1)
@@ -211,12 +211,12 @@ def get_crime_data():
 
         # Count active records
         total = db.execute(text("""
-            SELECT COUNT(*) FROM stlouis_gov_crime WHERE is_active = 1
+            SELECT COUNT(*) FROM stlouis_gov_crime_new WHERE is_active = 1
         """)).scalar()
 
         # Fetch paginated active crime rows
         rows = db.execute(text("""
-            SELECT * FROM stlouis_gov_crime
+            SELECT * FROM stlouis_gov_crime_new
             WHERE is_active = 1
             ORDER BY data_posted_on DESC
             LIMIT :limit OFFSET :offset

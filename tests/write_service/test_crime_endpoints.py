@@ -11,10 +11,10 @@ def test_client():
 
     # Prepare database with sample rows
     with engine.connect() as conn:
-        conn.execute(text("DELETE FROM stlouis_gov_crime"))
+        conn.execute(text("DELETE FROM stlouis_gov_crime_new"))
 
         conn.execute(text("""
-            INSERT INTO stlouis_gov_crime (id, created_on, data_posted_on, is_active, raw_json)
+            INSERT INTO stlouis_gov_crime_new (id, created_on, data_posted_on, is_active, raw_json)
             VALUES
             (1, NOW(), NOW(), 1, '{"crime": "robbery"}'),
             (2, NOW(), NOW(), 1, '{"crime": "theft"}'),
