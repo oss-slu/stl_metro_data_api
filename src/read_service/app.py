@@ -30,7 +30,7 @@ except ImportError:
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
-PG_PORT = os.getenv('PG_PORT', '5432')
+PG_PORT = os.getenv('PG_PORT', '5433')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', 'example_pass')
@@ -155,6 +155,18 @@ def swagger_spec():
                     "responses": {"200": {"description": "OK"}}
                 }
             },
+            "/api/crime": {
+                "get": {
+                    "summary": "Get active crime data (paginated)",
+                    "parameters": [
+                        {"name": "page", "in": "query", "schema": {"type": "integer"}},
+                        {"name": "page_size", "in": "query", "schema": {"type": "integer"}}
+                    ],
+                    "responses": {
+                        "200": {"description": "Paginated crime list"}
+                    }
+                }
+            },
             "/csb": {
                 "get": {
                     "summary": "Get active CSB service requests",
@@ -200,6 +212,7 @@ def swagger_spec():
                     "responses": {"200": {"description": "Data list"}}
                 }
             }
+            
         }
     })
 
@@ -211,6 +224,63 @@ def query_stub():
     It just proves that the read_service has a query stub.
     """
     return jsonify({"message": "This is a query stub endpoint"})
+
+
+@app.route('/api/crime', methods=['GET'])
+def get_crime_data():
+    """
+    Retrieve active crime data from the `stlouis_gov_crime_new` table.
+
+    Query Parameters:
+      - page (int): Page number (default=1)
+      - page_size (int): Results per page (default=50)
+
+    Returns:
+      Paginated JSON list of crime records.
+    """
+    from flask import request
+
+    # Validate pagination parameters
+    try:
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 50))
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    offset = (page - 1) * page_size
+
+    try:
+        db = SessionLocal()
+
+        # Count active records
+        total = db.execute(text("""
+            SELECT COUNT(*) FROM stlouis_gov_crime_new WHERE is_active = 1
+        """)).scalar()
+
+        # Fetch paginated active crime rows
+        rows = db.execute(text("""
+            SELECT * FROM stlouis_gov_crime_new
+            WHERE is_active = 1
+            ORDER BY data_posted_on DESC
+            LIMIT :limit OFFSET :offset
+        """), {"limit": page_size, "offset": offset})
+
+        crimes = [dict(r._mapping) for r in rows]
+
+        db.close()
+
+        return jsonify({
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size,
+            "crimes": crimes
+        })
+
+    except Exception as e:
+        app.logger.error(f"Crime query failed: {e}")
+        return jsonify({"error": "Failed to query crime data"}), 500
+
     
 # Error handler for 404
 @app.errorhandler(404)
