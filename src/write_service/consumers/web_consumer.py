@@ -34,7 +34,6 @@ def retry_database_operation(func, max_retries=3, delay=2):
             time.sleep(delay)
 
 def consume_web_data(topic="processed.web.data", max_messages=None, group_id=None):
-def consume_web_data(topic="processed.web.data", max_messages=None, group_id=None):
     """Consume messages from Kafka and store in PostgreSQL"""
     # 1. Setup database
     engine = get_db_engine()
