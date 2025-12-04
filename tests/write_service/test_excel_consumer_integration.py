@@ -13,7 +13,7 @@ import urllib
 # Use the same Python interpreter that's running the test (from venv)
 CONSUMER_ENTRY = [sys.executable, "-m", "write_service.consumers.excel_consumer"]
 
-
+@pytest.mark.integration
 def test_end_to_end_kafka_to_postgres(tmp_path):
     """
     End-to-end smoke test:
