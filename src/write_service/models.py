@@ -8,11 +8,11 @@ import urllib.parse
 from datetime import datetime
 
 from sqlalchemy import (
-    create_engine, MetaData, Table, Column, Integer, String, Text, DateTime, Index, func
+    create_engine, MetaData, Table, Column, String, Text, DateTime, func
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID, TSVECTOR
-from sqlalchemy.ext.declarative import declarative_base, DeferredReflection
-from sqlalchemy.orm import sessionmaker, mapper
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text as sa_text
 
 DATABASE_URL = os.getenv(
@@ -61,9 +61,7 @@ def get_or_create_table_class(site_name: str):
     normalized = _normalize_table_name(site_name)
     table_name = f"pdf_{normalized}"
 
-        # If already mapped, return the existing mapped class (compat with SQLAlchemy 1.x and 2.x)
     try:
-        # SQLAlchemy <=1.4 used Base._decl_class_registry
         decl_registry = getattr(Base, "_decl_class_registry", None)
         if decl_registry:
             for cls in decl_registry.values():
@@ -73,7 +71,6 @@ def get_or_create_table_class(site_name: str):
                 except Exception:
                     continue
 
-        # SQLAlchemy 2: inspect registry mappers for a mapped class using this table name
         if hasattr(Base, "registry") and hasattr(Base.registry, "mappers"):
             try:
                 for mapper in Base.registry.mappers:
@@ -83,7 +80,6 @@ def get_or_create_table_class(site_name: str):
             except Exception:
                 pass
     except Exception:
-        # If anything goes wrong here, fall through and create a new mapped class
         pass
 
     # Build table dynamically
