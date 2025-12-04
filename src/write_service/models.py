@@ -21,7 +21,7 @@ DATABASE_URL = os.getenv(
 ) or (
     f"postgresql+psycopg2://{os.getenv('PG_USER','postgres')}:"
     f"{urllib.parse.quote_plus(os.getenv('PG_PASSWORD',''))}@{os.getenv('PG_HOST','localhost')}:"
-    f"{os.getenv('PG_PORT','5432')}/{os.getenv('PG_DB','stl_data')}"
+    f"{os.getenv('PG_PORT','5433')}/{os.getenv('PG_DB','stl_data')}"
 )
 
 # SQLAlchemy engine and session
