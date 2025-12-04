@@ -22,7 +22,18 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from kafka import KafkaConsumer, KafkaError
+# robust kafka imports (compat across kafka-python versions)
+try:
+    from kafka import KafkaConsumer
+    from kafka.errors import KafkaError
+except Exception:
+    try:
+        # older packaging / vendor layout fallback
+        from kafka import KafkaConsumer, KafkaError
+    except Exception:
+        # Make imports safe for test-time import (consumer runtime will still fail if kafka missing)
+        KafkaConsumer = None
+        KafkaError = Exception
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text as sa_text
 

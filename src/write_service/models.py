@@ -4,6 +4,7 @@ from typing import Dict, Any
 import os
 import re
 import uuid
+import urllib.parse
 from datetime import datetime
 
 from sqlalchemy import (
@@ -19,7 +20,7 @@ DATABASE_URL = os.getenv(
     os.getenv("PG_URL", None)
 ) or (
     f"postgresql+psycopg2://{os.getenv('PG_USER','postgres')}:"
-    f"{os.getenv('PG_PASSWORD','')}@{os.getenv('PG_HOST','localhost')}:"
+    f"{urllib.parse.quote_plus(os.getenv('PG_PASSWORD',''))}@{os.getenv('PG_HOST','localhost')}:"
     f"{os.getenv('PG_PORT','5432')}/{os.getenv('PG_DB','stl_data')}"
 )
 
@@ -29,7 +30,7 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 Base = declarative_base()
 
-_metadata = MetaData(bind=engine)
+_metadata = MetaData()
 
 
 def _normalize_table_name(name: str) -> str:
@@ -60,13 +61,30 @@ def get_or_create_table_class(site_name: str):
     normalized = _normalize_table_name(site_name)
     table_name = f"pdf_{normalized}"
 
-    # If already mapped, return the existing mapped class
-    for cls in Base._decl_class_registry.values():  # type: ignore[attr-defined]
-        try:
-            if getattr(cls, "__tablename__", None) == table_name:
-                return cls
-        except Exception:
-            continue
+        # If already mapped, return the existing mapped class (compat with SQLAlchemy 1.x and 2.x)
+    try:
+        # SQLAlchemy <=1.4 used Base._decl_class_registry
+        decl_registry = getattr(Base, "_decl_class_registry", None)
+        if decl_registry:
+            for cls in decl_registry.values():
+                try:
+                    if getattr(cls, "__tablename__", None) == table_name:
+                        return cls
+                except Exception:
+                    continue
+
+        # SQLAlchemy 2: inspect registry mappers for a mapped class using this table name
+        if hasattr(Base, "registry") and hasattr(Base.registry, "mappers"):
+            try:
+                for mapper in Base.registry.mappers:
+                    mapped_table = getattr(mapper, "local_table", None) or getattr(mapper, "persist_selectable", None)
+                    if mapped_table is not None and getattr(mapped_table, "name", None) == table_name:
+                        return mapper.class_
+            except Exception:
+                pass
+    except Exception:
+        # If anything goes wrong here, fall through and create a new mapped class
+        pass
 
     # Build table dynamically
     tbl = Table(
