@@ -28,14 +28,14 @@ try:
     load_dotenv()
 except ImportError:
     pass
-from read_service.api.building_permits import create_building_permits_blueprint
+from api.building_permits import create_building_permits_blueprint
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
-PG_PORT = os.getenv('PG_PORT', '5432')
-PG_DB = os.getenv('PG_DB') or 'stl_data'
-PG_USER = os.getenv('PG_USER') or 'postgres'
-PG_PASSWORD = os.getenv('PG_PASSWORD')  # no default, password MUST come from env
+PG_PORT = os.getenv('PG_PORT', '5433')
+PG_DB = os.getenv('PG_DB', 'stl_data')
+PG_USER = os.getenv('PG_USER', 'postgres')
+PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
 
 # Database engine (shared across queries)
 from urllib.parse import quote_plus
