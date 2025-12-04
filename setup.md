@@ -78,23 +78,25 @@ cp .env.example .env
 Edit `.env` with a text editor (e.g., VS Code). Example content:
 
 ```env
-KAFKA_BROKER_ID=1
-KAFKA_BROKER_HOST=kafka
-KAFKA_BROKER_PORT=9092
-KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-ZOOKEEPER_HOST=zookeeper
-ZOOKEEPER_PORT=2181
-
-
 KAFKA_BROKER=localhost:9092
 PG_HOST=localhost
 PG_PORT=5433
 PG_DB=stl_data
 PG_USER=postgres
 PG_PASSWORD=example_pass
+PYTHONPATH=src
 
-
+#Kafka
+KAFKA_BROKER_ID=1
+KAFKA_BROKER_HOST=kafka
+KAFKA_BROKER_PORT=9092
+KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+ZOOKEEPER_HOST=zookeeper
+ZOOKEEPER_PORT=2181
 KAFKA_TOPICS=raw-data-topic,processed-data-topic
+RAW_DATA_TOPIC=raw-data-topic
+PROCESSED_DATA_TOPIC=processed-data-topic
+
 ```
 
 - **Note**: Use a secure `PG_PASSWORD` for local development. Do not commit `.env` to Git (it’s ignored via `.gitignore`).
