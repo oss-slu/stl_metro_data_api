@@ -11,7 +11,7 @@ from sqlalchemy import (
     create_engine, MetaData, Table, Column, String, Text, DateTime, func
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID, TSVECTOR
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text as sa_text
 

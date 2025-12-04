@@ -25,6 +25,7 @@ def fake_session():
     session.rollback = MagicMock()
     return session
 
+@pytest.mark.integration
 def test_process_pdf_and_insert_tables(fake_session):
     # Extract text pages from the PDF
     pages = pdf_fetcher.extract_text_from_pdf(PDF_URL, is_url=True)

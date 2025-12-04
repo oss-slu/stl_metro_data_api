@@ -7,7 +7,7 @@ https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import sys
 import os
 
@@ -25,12 +25,13 @@ def client():
         yield client
 
 
-def test_csb_api_returns_active_only(client, mocker):
+@patch('processors.csb_service_processor.get_csb_service_data')
+def test_csb_api_returns_active_only(mock_get_data, client):
     """
     Unit test: Verify only active records (is_active=1) are returned.
     Uses mocked database to avoid real DB dependency.
     """
-    mock_data = [
+    mock_get_data.return_value = [
         {
             "id": 1,
             "service_name": "Refuse Collection-Missed Pickup",
@@ -45,11 +46,6 @@ def test_csb_api_returns_active_only(client, mocker):
         }
     ]
     
-    mocker.patch(
-        'processors.csb_service_processor.get_csb_service_data',  # ← UPDATED PATH
-        return_value=mock_data
-    )
-    
     response = client.get('/csb')
     
     assert response.status_code == 200
@@ -58,22 +54,18 @@ def test_csb_api_returns_active_only(client, mocker):
     assert all(record['is_active'] == 1 for record in data)
 
 
-def test_csb_api_includes_source_url(client, mocker):
+@patch('processors.csb_service_processor.get_csb_service_data')
+def test_csb_api_includes_source_url(mock_get_data, client):
     """
     Unit test: Verify each record includes the correct source URL.
     """
-    mock_data = [
+    mock_get_data.return_value = [
         {
             "id": 1,
             "service_name": "Test Service",
             "source_url": "https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5"
         }
     ]
-    
-    mocker.patch(
-        'processors.csb_service_processor.get_csb_service_data',  # ← UPDATED PATH
-        return_value=mock_data
-    )
     
     response = client.get('/csb')
     data = response.get_json()
@@ -82,11 +74,12 @@ def test_csb_api_includes_source_url(client, mocker):
     assert 'stlouis-mo.gov/data/datasets/dataset.cfm?id=5' in data[0]['source_url']
 
 
-def test_csb_api_returns_json_array(client, mocker):
+@patch('processors.csb_service_processor.get_csb_service_data')
+def test_csb_api_returns_json_array(mock_get_data, client):
     """
     Unit test: Verify API returns a JSON array structure.
     """
-    mock_data = [
+    mock_get_data.return_value = [
         {
             "id": 1,
             "service_name": "Test Service",
@@ -94,11 +87,6 @@ def test_csb_api_returns_json_array(client, mocker):
             "source_url": "https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5"
         }
     ]
-    
-    mocker.patch(
-        'processors.csb_service_processor.get_csb_service_data',  # ← UPDATED PATH
-        return_value=mock_data
-    )
     
     response = client.get('/csb')
     data = response.get_json()
@@ -133,14 +121,12 @@ def test_csb_api_e2e_with_active_data(client):
             assert 'created_on' in record
 
 
-def test_csb_api_error_handling(client, mocker):
+@patch('processors.csb_service_processor.get_csb_service_data')
+def test_csb_api_error_handling(mock_get_data, client):
     """
     Unit test: Verify proper error handling when database query fails.
     """
-    mocker.patch(
-        'processors.csb_service_processor.get_csb_service_data',  # ← UPDATED PATH
-        side_effect=Exception("Database connection failed")
-    )
+    mock_get_data.side_effect = Exception("Database connection failed")
     
     response = client.get('/csb')
     
@@ -149,14 +135,12 @@ def test_csb_api_error_handling(client, mocker):
     assert 'error' in response_data
 
 
-def test_csb_api_empty_result(client, mocker):
+@patch('processors.csb_service_processor.get_csb_service_data')
+def test_csb_api_empty_result(mock_get_data, client):
     """
     Unit test: Verify API handles empty results gracefully.
     """
-    mocker.patch(
-        'processors.csb_service_processor.get_csb_service_data',  # ← UPDATED PATH
-        return_value=[]
-    )
+    mock_get_data.return_value = []
     
     response = client.get('/csb')
     
