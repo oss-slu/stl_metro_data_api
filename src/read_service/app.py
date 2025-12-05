@@ -12,14 +12,26 @@ Integrates with write_service via shared PG (CQRS separation).
 """
 
 import os
-from flask import Flask, jsonify, render_template
+import webbrowser
+import threading
+from flask import Flask, jsonify, render_template, render_template_string
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
+from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
-from flask_cors import CORS
-import requests
+from dotenv import load_dotenv
+
+try: 
+    load_dotenv()
+except ImportError:
+    pass
+from src.read_service.processors.arpa_processor import retrieve_from_database, save_into_database
+
+# Initialize Flask app
+app = Flask(__name__)
+api = Api(app)
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -29,15 +41,11 @@ PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', 'example_pass')
 
 # Database engine (shared across queries)
-engine_url = f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+from urllib.parse import quote_plus
+password = quote_plus(PG_PASSWORD) # wraps the password in quotes so it doesn't mistake it for the host
+engine_url = f"postgresql+psycopg2://{PG_USER}:{password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Initialize Flask app
-app = Flask(__name__)
-api = Api(app)
-# Use Flask CORS to allow connections from other sites
-CORS(app)
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -64,6 +72,26 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 
 # Register the blueprint
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+@app.route('/api/arpa', strict_slashes = False)
+def arpa():
+    """
+    This function returns the ARPA funds data (list of dictionaries) from the ARPA Processor
+    """
+    result = retrieve_from_database()
+    print(result)
+    
+    if result is None:
+        return {}
+    else:
+        return result
+
+@app.route('/')
+def main():
+    """
+    For now, we just show a simple webpage.
+    """
+    return render_template("index.html")
 
 # Basic health check endpoint (Query side: Check PG connection)
 @app.route('/health', methods=['GET'])
@@ -148,6 +176,37 @@ def swagger_spec():
                     "responses": {"200": {"description": "OK"}}
                 }
             },
+            "/csb": {
+                "get": {
+                    "summary": "Get active CSB service requests",
+                    "tags": ["Business/Citizen Services"],
+                    "description": "Retrieves all active (is_active=1) Citizens' Service Bureau (311) service requests from the St. Louis Open Data portal.",
+                    "responses": {
+                        "200": {
+                            "description": "Array of active service requests",
+                            "content": {
+                                "application/json": {
+                                    "example": [
+                                        {
+                                            "id": 1,
+                                            "service_name": "Refuse Collection-Missed Pickup",
+                                            "description": "Trash was not collected",
+                                            "is_active": 1,
+                                            "contact_info": {
+                                                "caller_type": "Resident",
+                                                "neighborhood": "Downtown",
+                                                "ward": "7"
+                                            },
+                                            "source_url": "https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5",
+                                            "data_posted_on": "2025-01-15T08:30:00"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/events/{event_type}": {
                 "get": {
                     "summary": "Get events by type",
@@ -199,6 +258,53 @@ def not_found(error):
 def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
+@app.route("/csb", methods=["GET"])
+def get_csb_services():
+    """
+    GET endpoint for active CSB (Citizens' Service Bureau) service requests.
+    
+    Retrieves all active records (is_active=1) from csb_service_requests table.
+    Each record includes a source URL linking back to the original data source.
+    
+    Returns:
+        JSON array of active CSB 311 service request records
+        
+    Example response:
+        [
+            {
+                "id": 1,
+                "service_name": "Refuse Collection-Missed Pickup",
+                "contact_info": {
+                    "caller_type": "Resident",
+                    "neighborhood": "Downtown",
+                    "ward": "7"
+                },
+                "source_url": "https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5",
+                ...
+            }
+        ]
+        
+    Source: CSB Service Requests (311) Dataset
+            https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
+    Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
+    """
+    from processors.csb_service_processor import get_csb_service_data
+    
+    try:
+        db = SessionLocal()
+        data = get_csb_service_data(db)
+        db.close()
+        return jsonify(data), 200
+    except Exception as e:
+        app.logger.error(f"CSB Service API error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+    
+def open_browser():
+    """Open Swagger UI in browser."""
+    import time
+    time.sleep(1.5)
+    webbrowser.open('http://127.0.0.1:5001/swagger') 
+
 if __name__ == '__main__':
     # Import and start the mock Kafka consumer before running Flask.
     # This ensures that when the read-service starts, it also begins
@@ -206,5 +312,8 @@ if __name__ == '__main__':
     from src.read_service.processors.events import start_mock_consumer
     start_mock_consumer(app.logger)
 
+    threading.Thread(target=open_browser, daemon=True).start()
+
     # Run the Flask app (debug mode = True for development only).
-    app.run(host='0.0.0.0', port=5001)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=5001, debug=debug_mode)

@@ -3,6 +3,7 @@ import logging
 from flask import Flask, render_template, render_template_string
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
+from src.read_service.processors.arpa_processor import save_into_database
 
 # This is the Python app for the WRITE service
 app = Flask(__name__)
@@ -23,7 +24,8 @@ def test_json():
     # Grab and parse data from URL, also send to Kafka
     testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
     result = get_json(testURL)
-    kafka_status = send_data(result, "arpa")
+    kafka_status = send_data(result)
+    save_into_database(result)
 
     # Display results to user
     formattedResult = json.dumps(result, indent=2)

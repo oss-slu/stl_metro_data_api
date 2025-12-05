@@ -7,10 +7,14 @@ from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
+from src.write_service.ingestion.json_fetcher import get_json
+from src.write_service.processing.json_processor import send_data
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
-PG_HOST = os.getenv('PG_HOST', 'localhost')
+# Code will choose between two different hosts: 
+# localhost (for local runs) and postgres (when running in Docker)
+PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
 PG_PORT = os.getenv('PG_PORT', '5433')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
@@ -135,12 +139,16 @@ def save_into_database(data, topic_name, topic_extended_name=None):
     # Exceptions
     except SQLAlchemyError as e:
         print("An error occured when connecting to the database. \n " + str(e))
-        session.rollback()
 
     except Exception as e:
         print("An error occured when saving to the database. \n " + str(e))
 
-# Test function
+# Test function that retrieves real City data (ARPA funds), parses it, sends to Kafka, 
+# retrieves from Kafka, and saves into the database
 if __name__ == "__main__":
+    testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
+    result = get_json(testURL)
+    kafka_status = send_data(result, "arpa")
     test_data = retrieve_from_kafka("arpa")
-    save_into_database(test_data, "arpa2", "ARPA funds usage")
+    save_into_database(test_data, "ARPA_funds", "ARPA funds usage")
+    

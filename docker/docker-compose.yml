@@ -70,6 +70,26 @@ services:
     ports:
       - "5001:5001"
 
+  pdf_consumer:
+    build:
+      context: ../
+      dockerfile: docker/write_service/Dockerfile
+    command: ["python", "-m", "src.write_service.consumers.processed_consumer"]
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      PG_HOST: postgres
+      PG_PORT: ${PG_PORT}
+      PG_DB: stl_data
+      PG_USER: postgres
+      PG_PASSWORD: ${PG_PASSWORD}
+      DATABASE_URL: "postgresql+psycopg2://postgres:${PG_PASSWORD}@postgres:${PG_PORT}/${PG_DB}"
+      KAFKA_BROKER: "kafka:9092"
+      PROCESSED_TOPIC: "processed-data-topic"
+    networks:
+      - kafka-net
+
 volumes:
   pg_data:
 
