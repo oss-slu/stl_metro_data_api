@@ -53,3 +53,8 @@ htmlcov/
 *~
 *.bak
 *.tmp
+
+# Ignore downloaded data
+data/
+src/write_service/data/
+src/write_service/ingestion/data/

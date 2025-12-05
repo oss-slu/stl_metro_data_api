@@ -9,5 +9,5 @@ COPY requirements.txt .
 EXPOSE 5000
 
 # Install required Python libraries and then start the app
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 CMD ["python", "-m", "src.write_service.app"]
