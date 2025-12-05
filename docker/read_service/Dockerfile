@@ -10,4 +10,4 @@ EXPOSE 5001
 
 # Install required Python libraries and then start the app
 RUN pip install --no-cache-dir -r requirements.txt
-CMD ["python", "src/read_service/app.py"]
+CMD ["python", "-m", "src.read_service.app"]
