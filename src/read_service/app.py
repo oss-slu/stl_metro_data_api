@@ -21,6 +21,9 @@ from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from flask_cors import CORS
+import requests
+
 from dotenv import load_dotenv
 
 try: 
@@ -32,6 +35,9 @@ from src.read_service.processors.arpa_processor import retrieve_from_database, s
 # Initialize Flask app
 app = Flask(__name__)
 api = Api(app)
+
+# Use Flask CORS to allow connections from other sites
+CORS(app)
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
@@ -46,6 +52,7 @@ password = quote_plus(PG_PASSWORD) # wraps the password in quotes so it doesn't 
 engine_url = f"postgresql+psycopg2://{PG_USER}:{password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
