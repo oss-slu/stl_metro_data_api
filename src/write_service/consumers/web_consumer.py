@@ -50,8 +50,8 @@ def consume_web_data(topic="processed.web.data", max_messages=None, group_id=Non
         value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         auto_offset_reset="earliest",
         enable_auto_commit=True,
-        group_id=group_id,
-        consumer_timeout_ms=10000  # Exit after 10s of no messages (for testing)
+        group_id=group_id,            
+        consumer_timeout_ms=10000
     )
     logger.info(f"Started consuming from topic: {topic}")
 
