@@ -83,8 +83,9 @@ app.register_blueprint(swaggerui_blueprint)
 @app.route('/api/arpa', strict_slashes = False)
 def arpa():
     """
-    This function returns the ARPA funds data (list of dictionaries) from the ARPA Processor
+    This function returns the ARPA funds data from the ARPA Processor in JSON format
     """
+    
     result = retrieve_from_database()
     print(result)
     
