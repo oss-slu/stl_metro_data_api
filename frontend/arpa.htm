@@ -55,7 +55,7 @@
 
             // Get the table
             var table = document.getElementById("data-table");
-            var URL = window.location.origin.replace("9000", "5001") + "/arpa";
+            var URL = window.location.origin.replace("9000", "5001") + "/api/arpa";
             var table_container = document.getElementById("content");
             table_container.style.display = "none";
             
@@ -122,18 +122,20 @@
                         **/
 
                         // Add each row to the data table
+                        var contents = entity["content"];
+
                         data_table.row.add({
-                            id: entity['PROJECTID'],
-                            name: entity['PROJECTTITLE'],
-                            date: entity['DATE'],
-                            amount: parseFloat(entity['AMOUNT'])
+                            id: contents['PROJECTID'],
+                            name: contents['PROJECTTITLE'],
+                            date: contents['DATE'],
+                            amount: parseFloat(contents['AMOUNT'])
                         });
 
-                        total_amount += parseFloat(entity['AMOUNT']);
+                        total_amount += parseFloat(contents['AMOUNT']);
 
-                        console.log("Added row " + String(i) + " with ID " + String(entity['PROJECTID']) 
-                        + ", title " + String(entity['PROJECTTITLE']) + ", date " + String(entity['DATE'])
-                        + ", and amount " + String(entity['AMOUNT']) + ".");
+                        console.log("Added row " + String(i) + " with ID " + String(contents['PROJECTID']) 
+                        + ", title " + String(contents['PROJECTTITLE']) + ", date " + String(contents['DATE'])
+                        + ", and amount " + String(contents['AMOUNT']) + ".");
                     }
 
                     // Redraw entire table
