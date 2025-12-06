@@ -78,7 +78,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 
 # Register the blueprint
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+app.register_blueprint(swaggerui_blueprint)
 
 @app.route('/api/arpa', strict_slashes = False)
 def arpa():
@@ -88,10 +88,11 @@ def arpa():
     result = retrieve_from_database()
     print(result)
     
+    # Return data / message with response code
     if result is None:
-        return {}
+        return jsonify([{"Response": "Data is empty"}]), 200
     else:
-        return result
+        return jsonify(result), 200
 
 @app.route('/')
 def main():
@@ -183,6 +184,46 @@ def swagger_spec():
                     "responses": {"200": {"description": "OK"}}
                 }
             },
+            "/api/arpa": {
+                "get": {
+                    "summary": "Get data about ARPA funds usage",
+                    "tags": ["City Budget and Funding"],
+                    "description": "This endpoint retrieves information on how the City of St. Louis used ARPA (American Rescue Plan Act) funds. Data is originally from the St. Louis Open Data portal.",
+                    "responses": {
+                        "200": {
+                            "description": "The data is a list of projects the City of St. Louis used ARPA funds on.",
+                            "content": {
+                                "application/json": {
+                                    "example": [
+                                        {
+                                            "id": 1,
+                                            "name": "ARPA Funds Entity #1",
+                                            "content": {
+                                                "ACCOUNT": "1000000",
+                                                "AMOUNT": 181,
+                                                "CENTER": "7000000",
+                                                "CREDIT": None,
+                                                "DATE": "August 30, 2025 00:00:00",
+                                                "DESC1": "Parking costs",
+                                                "DESC2": "",
+                                                "DESC3": "",
+                                                "FUND": "1170",
+                                                "ID": 9000000,
+                                                "ORDINANCE": 71000,
+                                                "PROJECTID": 42,
+                                                "PROJECTTITLE": "Community Health Workers",
+                                                "VENDOR": "Example Company"
+                                            },
+                                            "is_active": True,
+                                            "data_posted_on": "Sat, 06 Dec 2025 01:17:47 GMT"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/csb": {
                 "get": {
                     "summary": "Get active CSB service requests",
@@ -232,8 +273,13 @@ def swagger_spec():
     })
 
 
-@app.route('/arpa')
-def get_arpa():
+@app.route('/arpa_direct_retrieval')
+def get_arpa_directly_from_City_website():
+    """
+    Function that retrieves ARPA funds directly from City website and returns as JSON.
+    For testing purposes.
+    """
+
     print("Getting JSON data from City website...")
     response = requests.get("https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json")
     response.raise_for_status()
