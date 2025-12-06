@@ -109,7 +109,7 @@ class StLouisCrimeStats(Base):
         is_active       - only active records should be returned
         raw_json        - JSON of original record
     """
-    __tablename__ = "stlouis_gov_crime_new"
+    __tablename__ = "stlouis_gov_crime"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_on = Column(DateTime, default=lambda: datetime.now(timezone.utc))

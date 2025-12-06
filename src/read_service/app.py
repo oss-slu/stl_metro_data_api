@@ -14,11 +14,12 @@ Integrates with write_service via shared PG (CQRS separation).
 import os
 import webbrowser
 import threading
-from flask import Flask, jsonify
+from write_service.consumers.models import StLouisCrimeStats
+from flask import Flask, jsonify, request
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
 from pytest import Session
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
@@ -223,13 +224,12 @@ def query_stub():
     This does not connect to the database.
     It just proves that the read_service has a query stub.
     """
-    return jsonify({"message": "This is a query stub endpoint"})
-
+    return jsonify({"message": "This is a query stub endpoint"})    
 
 @app.route('/api/crime', methods=['GET'])
 def get_crime_data():
     """
-    Retrieve active crime data from the `stlouis_gov_crime_new` table.
+    Retrieve active crime data from the `stlouis_gov_crime` table using SQLAlchemy ORM.
 
     Query Parameters:
       - page (int): Page number (default=1)
@@ -238,36 +238,42 @@ def get_crime_data():
     Returns:
       Paginated JSON list of crime records.
     """
-    from flask import request
-
-    # Validate pagination parameters
     try:
+        # Validate pagination parameters
         page = int(request.args.get("page", 1))
         page_size = int(request.args.get("page_size", 50))
+        if page < 1 or page_size < 1:
+            raise ValueError("Page and page_size must be positive integers")
     except ValueError:
         return jsonify({"error": "Invalid pagination parameters"}), 400
 
     offset = (page - 1) * page_size
 
+    db = SessionLocal()
     try:
-        db = SessionLocal()
+        # Count total active records
+        total = db.query(func.count()).select_from(StLouisCrimeStats)\
+                  .filter(StLouisCrimeStats.is_active.is_(True))\
+                  .scalar()
 
-        # Count active records
-        total = db.execute(text("""
-            SELECT COUNT(*) FROM stlouis_gov_crime_new WHERE is_active = 1
-        """)).scalar()
+        # Fetch paginated active crime records
+        rows = db.query(StLouisCrimeStats)\
+                 .filter(StLouisCrimeStats.is_active.is_(True))\
+                 .order_by(StLouisCrimeStats.data_posted_on.desc())\
+                 .limit(page_size)\
+                 .offset(offset)\
+                 .all()
 
-        # Fetch paginated active crime rows
-        rows = db.execute(text("""
-            SELECT * FROM stlouis_gov_crime_new
-            WHERE is_active = 1
-            ORDER BY data_posted_on DESC
-            LIMIT :limit OFFSET :offset
-        """), {"limit": page_size, "offset": offset})
-
-        crimes = [dict(r._mapping) for r in rows]
-
-        db.close()
+        # Convert ORM objects to dict
+        crimes = []
+        for r in rows:
+            crimes.append({
+                "id": r.id,
+                "created_on": r.created_on.isoformat(),
+                "data_posted_on": r.data_posted_on.isoformat() if r.data_posted_on else None,
+                "is_active": r.is_active,
+                "raw_json": r.raw_json
+            })
 
         return jsonify({
             "page": page,
@@ -280,8 +286,9 @@ def get_crime_data():
     except Exception as e:
         app.logger.error(f"Crime query failed: {e}")
         return jsonify({"error": "Failed to query crime data"}), 500
+    finally:
+        db.close()
 
-    
 # Error handler for 404
 @app.errorhandler(404)
 def not_found(error):
