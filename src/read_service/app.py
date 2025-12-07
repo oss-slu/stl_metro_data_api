@@ -39,7 +39,8 @@ api = Api(app)
 
 # Use Flask CORS to allow connections from other sites
 CORS(app)
-from api.building_permits import create_building_permits_blueprint
+
+from src.read_service.api.building_permits import create_building_permits_blueprint
 
 # Environment vars
 PG_HOST = os.getenv('PG_HOST', 'localhost')
