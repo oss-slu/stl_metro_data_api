@@ -108,6 +108,24 @@ The STL Metro Data API uses CQRS architecture to separate data collection (write
 - Kafka: Event streaming and message queue
 - Read Service: PostgreSQL database and Flask API
 
+## 🔐 Security & Threat Model
+
+The STL Metro Data API includes a detailed **Threat Model** that documents the system’s security assumptions, identified risks, and recommended mitigations.  
+This resource helps contributors, maintainers, and future teams understand the project’s security posture and how it may evolve.
+
+**View the full Threat Model:**  
+**[docs/threat_model.md](docs/threat_model.md)**
+
+**Key Notes:**
+
+- The project is designed for **local development environments only**.  
+- API services currently include **no authentication**.  
+- Kafka and PostgreSQL should **not** be exposed publicly without additional hardening.  
+- Contributors making architectural or security-related changes should review the Threat Model before submitting PRs.
+
+For questions regarding security considerations, please reach out to the project’s Tech Lead.
+
+
 ## Code of Conduct
 
 We are committed to fostering an inclusive and respectful community for all contributors to the STL Data API project. Please review our [Code of Conduct](docs/CODE_OF_CONDUCT.md) for guidelines on expected behavior, reporting violations, and our pledge to a harassment-free environment. By participating, you agree to uphold these standards.
