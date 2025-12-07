@@ -26,8 +26,7 @@ def test_send_to_kafka_valid(mock_producer_class):
 
     valid_records = [{"color": "blue"}, {"color": "red"}]
 
-    # Act
-    kafka_status = send_data(valid_records)
+    kafka_status = send_data(valid_records, "test")
 
     # Assert: the function should report success when producer works
     assert kafka_status.startswith("Sent data to Kafka successfully!")
@@ -44,8 +43,7 @@ def test_send_to_kafka_invalid(mock_producer_class):
 
     invalid_records = [1, 2, 3]
 
-    # Act
-    kafka_status = send_data(invalid_records)
+    kafka_status = send_data(invalid_records, "test")
 
     # Assert: cleaned non-dict items should be wrapped and then "sent"
     assert kafka_status.startswith("Sent data to Kafka successfully!")

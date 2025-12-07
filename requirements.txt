@@ -10,8 +10,10 @@ openpyxl==3.1.2
 sqlalchemy>=2.0.30
 flask-swagger-ui==4.11.1
 pytest==7.4.3
+pytest-mock
 six==1.16.0
 python-dotenv==1.0.1
 requests-mock==1.11.0
 jsonschema>=4.0.0,<5.0
 pycryptodome>=3.0
+flask_cors
