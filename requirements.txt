@@ -16,3 +16,4 @@ python-dotenv==1.0.1
 requests-mock==1.11.0
 jsonschema>=4.0.0,<5.0
 pycryptodome>=3.0
+flask_cors

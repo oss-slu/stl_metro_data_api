@@ -140,11 +140,9 @@ def test_consumer_with_real_kafka():
     producer.send("processed.web.data", test_data)
     producer.flush()
     producer.close()
-
-    # Give Kafka a short moment to commit the message
-    time.sleep(3)
-
-    # Consume it with a fresh unique consumer group so we always read the new message
+    
+    # Consume it
+    time.sleep(2)
     consume_web_data(topic="processed.web.data", max_messages=1, group_id=unique_group)
     
     # Check count increased
