@@ -92,37 +92,48 @@ def test_pdf():
             for i, p in enumerate(pages)
         )
 
-        html = f"""
-            <html>
-                <head>
-                    <title>PDF Test - WRITE Service</title>
-                </head>
-                <body>
-                    <h1>PDF Extraction + Processing Test</h1>
+        # If kafka_status appears to be an error message string, show only a generic error
+        if (isinstance(kafka_status, str) and kafka_status.startswith("Failed")) or (
+            isinstance(kafka_status, dict) and kafka_status.get("success") is False
+        ):
+            html = """
+                <html>
+                    <head>
+                        <title>PDF Test - WRITE Service</title>
+                    </head>
+                    <body>
+                        <h1>PDF Extraction + Processing Test</h1>
+                        <h2>Kafka Processing Result:</h2>
+                        <pre>An internal error occurred while processing the PDF.</pre>
+                    </body>
+                </html>
+            """
+        else:
+            html = f"""
+                <html>
+                    <head>
+                        <title>PDF Test - WRITE Service</title>
+                    </head>
+                    <body>
+                        <h1>PDF Extraction + Processing Test</h1>
 
-                    <h2>Source PDF:</h2>
-                    <p>{pdf_source}</p>
+                        <h2>Source PDF:</h2>
+                        <p>{pdf_source}</p>
 
-                    <h2>Kafka Processing Result:</h2>
-                    <pre>
-                        PDF ID: {kafka_status.get("pdf_id", "")}
-                        Sent: {kafka_status.get("sent", False)}
-                        Tables: {kafka_status.get("tables_count", 0)}
-                        {"Status: Success" if kafka_status.get("sent") else "Status: Failed to send data."}
-                        {"Error occurred while sending. Please try again later." if not kafka_status.get("sent") else ""}
-                    </pre>
+                        <h2>Kafka Processing Result:</h2>
+                        <pre>{json.dumps(kafka_status, indent=2)}</pre>
 
-                    <h2>Extracted PDF Text by Page:</h2>
-                    {formatted_pages}
-                </body>
-            </html>
-        """
+                        <h2>Extracted PDF Text by Page:</h2>
+                        {formatted_pages}
+                    </body>
+                </html>
+            """
 
         return render_template_string(html)
 
     except Exception as e:
-        logging.error(f"PDF test failed: {e}")
-        return {"error": "Internal server error"}, 500
+        logging.error("PDF test failed", exc_info=True)
+        return {"error": "An internal error occurred while processing the PDF."}, 500
 
 
 @app.route('/health')
