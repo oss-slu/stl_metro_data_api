@@ -14,7 +14,8 @@ Integrates with write_service via shared PG (CQRS separation).
 import os
 import webbrowser
 import threading
-from write_service.consumers.models import StLouisCrimeStats
+from src.write_service.consumers.models import StLouisCrimeStats
+from src.read_service.processors.csb_service_processor import get_csb_service_data
 from flask import Flask, jsonify, render_template, render_template_string, request
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -54,6 +55,47 @@ engine_url = f"postgresql+psycopg2://{PG_USER}:{password}@{PG_HOST}:{PG_PORT}/{P
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
+
+# Ensure database schema is correct
+def ensure_crime_table_schema():
+    """
+    Ensure the stlouis_gov_crime table has all required columns.
+    This handles cases where the table exists but columns were added to the model later.
+    """
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        
+        # Check if table exists
+        if "stlouis_gov_crime" not in inspector.get_table_names():
+            app.logger.info("Crime table does not exist yet; will be created on first insert")
+            return
+        
+        # Get existing columns
+        existing_columns = {c["name"] for c in inspector.get_columns("stlouis_gov_crime")}
+        
+        # Define required columns
+        required_columns = {
+            "created_on": "TIMESTAMP DEFAULT NOW()",
+            "data_posted_on": "TIMESTAMP DEFAULT NOW()",
+            "is_active": "BOOLEAN DEFAULT TRUE",
+            "raw_json": "JSON NOT NULL DEFAULT '{}'"
+        }
+        
+        # Add any missing columns
+        with engine.connect() as conn:
+            for col, definition in required_columns.items():
+                if col not in existing_columns:
+                    app.logger.info(f"Adding missing column {col} to stlouis_gov_crime table")
+                    conn.execute(text(f"ALTER TABLE stlouis_gov_crime ADD COLUMN {col} {definition}"))
+            conn.commit()
+            
+    except Exception as e:
+        app.logger.warning(f"Could not ensure crime table schema: {e}")
+
+# Initialize schema on app startup
+ensure_crime_table_schema()
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -229,12 +271,56 @@ def swagger_spec():
             "/api/crime": {
                 "get": {
                     "summary": "Get active crime data (paginated)",
+                    "tags": ["Crime Data"],
+                    "description": "Retrieves paginated crime statistics from the St. Louis Metropolitan Police Department (SLMPD). Returns only active records with NIBRS crime classification data.",
                     "parameters": [
-                        {"name": "page", "in": "query", "schema": {"type": "integer"}},
-                        {"name": "page_size", "in": "query", "schema": {"type": "integer"}}
+                        {
+                            "name": "page",
+                            "in": "query",
+                            "schema": {"type": "integer"},
+                            "description": "Page number (default=1)",
+                            "required": False
+                        },
+                        {
+                            "name": "page_size",
+                            "in": "query",
+                            "schema": {"type": "integer"},
+                            "description": "Results per page (default=50, max recommended=100)",
+                            "required": False
+                        }
                     ],
                     "responses": {
-                        "200": {"description": "Paginated crime list"}
+                        "200": {
+                            "description": "Paginated crime statistics",
+                            "content": {
+                                "application/json": {
+                                    "example": {
+                                        "page": 1,
+                                        "page_size": 50,
+                                        "total": 5000,
+                                        "total_pages": 100,
+                                        "crimes": [
+                                            {
+                                                "id": 1,
+                                                "created_on": "2025-12-06T10:30:00",
+                                                "data_posted_on": "2025-12-05T15:45:00",
+                                                "is_active": True,
+                                                "raw_json": {
+                                                    "incident_number": "2025001234",
+                                                    "offense": "ASSAULT",
+                                                    "ward": "3",
+                                                    "latitude": 38.627,
+                                                    "longitude": -90.225
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            "description": "Invalid pagination parameters"
+                        }
                     }
                 }
             },
@@ -419,8 +505,6 @@ def get_csb_services():
             https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
     Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
     """
-    from processors.csb_service_processor import get_csb_service_data
-    
     try:
         db = SessionLocal()
         data = get_csb_service_data(db)
@@ -429,7 +513,7 @@ def get_csb_services():
     except Exception as e:
         app.logger.error(f"CSB Service API error: {e}")
         return jsonify({"error": "Internal server error"}), 500
-    
+     
 def open_browser():
     """Open Swagger UI in browser."""
     import time
