@@ -104,7 +104,13 @@ def test_pdf():
                     <p>{pdf_source}</p>
 
                     <h2>Kafka Processing Result:</h2>
-                    <pre>{json.dumps(kafka_status, indent=2)}</pre>
+                    <pre>
+                        PDF ID: {kafka_status.get("pdf_id", "")}
+                        Sent: {kafka_status.get("sent", False)}
+                        Tables: {kafka_status.get("tables_count", 0)}
+                        {("Status: Success" if kafka_status.get("sent") else "Status: Failed to send data.")}
+                        {("Error occurred while sending." if not kafka_status.get("sent") else "")}
+                    </pre>
 
                     <h2>Extracted PDF Text by Page:</h2>
                     {formatted_pages}

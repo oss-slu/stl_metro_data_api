@@ -288,27 +288,7 @@ def swagger_spec():
     })
 
 
-@app.route('/arpa_direct_retrieval')
-def get_arpa_directly_from_City_website():
-    """
-    Function that retrieves ARPA funds directly from City website and returns as JSON.
-    For testing purposes.
-    """
-
-    print("Getting JSON data from City website...")
-    response = requests.get("https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json")
-    response.raise_for_status()
-
-    print("Parsing the JSON data from City website...")
-    # Parse the data
-    data = response.json()
-
-    # Return the data
-    print(f"Data received successfully: \n {data}")
-    return data
-
-
-@app.route('/arpa_direct_retrieval')
+@app.route('/arpa_direct_retrieval', endpoint='arpa_direct_retrieval')
 def get_arpa_directly_from_City_website():
     """
     Function that retrieves ARPA funds directly from City website and returns as JSON.
