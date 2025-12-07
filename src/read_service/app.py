@@ -55,8 +55,6 @@ engine_url = f"postgresql+psycopg2://{PG_USER}:{password}@{PG_HOST}:{PG_PORT}/{P
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-
 # Ensure database schema is correct
 def ensure_crime_table_schema():
     """
