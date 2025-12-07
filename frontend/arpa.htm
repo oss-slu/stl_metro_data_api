@@ -1,0 +1,208 @@
+<html>
+    <head>
+        <title>ARPA Funds Usage</title>
+
+        <!-- I will use the Data Tables JavaScript library for my tables -->
+        <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
+        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+
+        <style>
+            .header {
+                font-weight: bold;
+                padding: 20px;
+                background-color: beige;
+            }
+
+            .details {
+                padding: 10px;
+                background-color: lightgreen;
+            }
+
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14pt;
+                padding: auto;
+            }
+
+            h1 {
+                color: green;
+            }
+
+            #data-table th {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: lightblue;
+                color: black;
+            }
+
+            #data-table {
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            #data-table td, th {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+        </style>
+
+        <script>
+        // When the webpage loads, call the following code...
+        window.onload = (event) => {
+
+            // Get the table
+            var table = document.getElementById("data-table");
+            var URL = window.location.origin.replace("9000", "5001") + "/api/arpa";
+            var table_container = document.getElementById("content");
+            table_container.style.display = "none";
+            
+            // Set up the data table
+            let data_table = new DataTable("#data-table", {
+                // By default, sort by newest date first
+                order: [[2, "desc"]],
+                processing: true,
+                columns: [
+                    {
+                        data: "id",
+                        defaultContent: "N/A",
+                        type: "num"
+                    }, 
+                    {
+                        data: "name", 
+                        defaultContent: "N/A",
+                        type: "string-utf8"
+                    }, 
+                    {
+                        data: "date", 
+                        defaultContent: "N/A", 
+                        type: "date"
+                    },
+                    {
+                        data: "amount", 
+                        defaultContent: "N/A", 
+                        type: "num-fmt", 
+                        // Put dollar sign before price when displaying
+                        render: DataTable.render.number( null, null, 2, '$' )
+                    }]
+                });
+            
+            const xmlhttp = new XMLHttpRequest();
+            xmlhttp.onload = function() {
+                try {
+                    document.getElementById("status-text").innerHTML = "<b>Loading table...</b>"
+                    // Parse the response
+                    var data = JSON.parse(this.responseText);
+                    var total_amount = 0;
+
+                    for (let i = 0; i < data.length; i++) {
+                        
+                        // Get each row's data and parse it
+                        var entity = data[i];
+
+                        /**
+                        // The pure vanilla JS way to add to a standard table,
+                        // use this if for whatever reason
+                        // Data Table JS library no longer being used.
+                        // This is what I used before I used Data Table JS.
+
+                        // Create the new row
+                        var row = table.insertRow(0);
+                        var idCell = row.insertCell();
+                        var nameCell = row.insertCell();
+                        var dateCell = row.insertCell();
+                        var amountCell = row.insertCell();
+ 
+                        idCell.innerHTML = entity['PROJECTID'];
+                        nameCell.innerHTML = entity['PROJECTTITLE'];
+                        dateCell.innerHTML = entity['DATE'];
+                        amountCell.innerHTML = parseFloat(entity['AMOUNT']);
+                        **/
+
+                        // Add each row to the data table
+                        var contents = entity["content"];
+
+                        data_table.row.add({
+                            id: contents['PROJECTID'],
+                            name: contents['PROJECTTITLE'],
+                            date: contents['DATE'],
+                            amount: parseFloat(contents['AMOUNT'])
+                        });
+
+                        total_amount += parseFloat(contents['AMOUNT']);
+
+                        console.log("Added row " + String(i) + " with ID " + String(contents['PROJECTID']) 
+                        + ", title " + String(contents['PROJECTTITLE']) + ", date " + String(contents['DATE'])
+                        + ", and amount " + String(contents['AMOUNT']) + ".");
+                    }
+
+                    // Redraw entire table
+                    data_table.columns.adjust().draw();
+                    table_container.style.display = "block";
+                    document.getElementById("status-text").innerHTML = "<b>A total of $" + total_amount.toLocaleString('en') + " has been spent.</b>";
+                } catch (error) {
+                    // Show error if processing failed
+                    alert("Something went wrong when processing the data! \n" + String(error));
+                }
+            }
+            try {
+                xmlhttp.open("GET", URL);
+                xmlhttp.send();
+            } catch (error) {
+                // Show error if connection failed
+                alert("Something went wrong when connecting to the back-end! \n" + String(error));
+            }
+        };
+
+    </script>
+    </head>
+    <body>
+        <h1>ARPA Funds Usage</h1>
+        <br>
+        <div>
+            <div class="header">Results<br></div>
+                <br>
+                <a href="index.htm">Return to home page</a>
+                <br>
+                <div style="text-align: center;" id="status-text"><b>Loading data and table...</b></div>
+                <br></br>
+                <div id="content">
+                    <table class="display" id="data-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Project ID
+                                </th>
+                                <th>
+                                    Project Name
+                                </th>
+                                <th>
+                                    Date Posted
+                                </th>
+                                <th>
+                                    Amount
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                <br></br>
+            </div>
+        </div>
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <footer>
+            <hr>
+            <p>
+                <span id="year"></span> SLU Open Source <br>
+                <script>document.getElementById("year").innerHTML = new Date().getFullYear();</script>
+            </p>
+        </footer>
+    </body>
+</html>

@@ -1,3 +1,8 @@
+"""
+json_fetcher.py
+This code retrieves the raw JSON data from a given URL.
+These functions are used in other parts of the project.
+"""
 import requests
 import logging
 import json
