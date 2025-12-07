@@ -3,7 +3,7 @@ import logging
 from flask import Flask, render_template, render_template_string
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
-from src.read_service.processors.arpa_processor import save_into_database
+from src.write_service.consumers.json_consumer import retrieve_from_kafka, save_into_database
 
 # This is the Python app for the WRITE service
 app = Flask(__name__)
@@ -18,17 +18,22 @@ def main():
 def test_json():
     """
     Test function that pulls sample JSON data from the City of St. Louis website, parses it,
-    sends it to Kafka, and then displays the results to the user.
+    sends it to Kafka, then retrieves from Kafka, and finally saves into the database.
+    Results and messages are displayed the results to the user.
+    This function tests the JSON fetcher, JSON processor, and JSON consumer.
+    Make sure Docker containers are up and running first.
+    Go to http://localhost:5000/json to see it for yourself!
     """
 
     # Grab and parse data from URL, also send to Kafka
     testURL = "https://www.stlouis-mo.gov/customcf/endpoints/arpa/expenditures.cfm?format=json"
     result = get_json(testURL)
-    kafka_status = send_data(result)
-    save_into_database(result)
+    kafka_status = send_data(result, "arpa")
+    result2 = retrieve_from_kafka("arpa")
+    save_into_database(result2, "ARPA_funds", "ARPA funds usage")
 
     # Display results to user
-    formattedResult = json.dumps(result, indent=2)
+    formattedResult = json.dumps(result2, indent=2)
     html = f"""
         <html>
             <head>
@@ -41,7 +46,7 @@ def test_json():
                     <b>Kafka Status:</b><br>
                     {kafka_status}
                 <hr><br>
-                <b>JSON data received from website (not cleaned yet):</b>
+                <b>JSON data saved into the database:</b>
                 <pre>{formattedResult}</pre>
                 </p>
             </body>

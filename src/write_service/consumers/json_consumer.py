@@ -1,8 +1,17 @@
+"""
+json_consumer.py
+This code takes the data from Kafka and saves it into the database.
+To test the JSON consumer, JSON processor, and JSON fetcher, you 
+must start up the Docker containers and then either
+1) run: python -m src.write_service.consumers.json_consumer
+OR
+2) go to https://localhost:5000/json
+"""
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 import json, time
 import os
-from sqlalchemy import Column, Integer, DateTime, JSON, String, create_engine
+from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine
 from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
@@ -34,15 +43,14 @@ def get_table_class(table_name):
         id = Column(Integer, primary_key=True, autoincrement=True)
         name = Column(String)
         content = Column(JSON, nullable=False)
-        date_added = Column(DateTime, default=datetime.now(timezone.utc))
+        is_active = Column(Boolean)
+        data_posted_on = Column(DateTime, default=datetime.now(timezone.utc))
     return DataTable
 
 def retrieve_from_kafka(topic_name):
     """
     This function retrieves the JSON data from Kafka.
     """
-    if (topic_name is None):
-        topic_name = "JSON-data"
 
     received_data = []
 
@@ -119,8 +127,9 @@ def save_into_database(data, topic_name, topic_extended_name=None):
                     continue
                 
                 new_row = table(
-                    name= topic_extended_name + " Entity #" + str(entity_counter),
-                    content=entity)
+                    name = topic_extended_name + " Entity #" + str(entity_counter),
+                    content = entity,
+                    is_active = True)
                 session.add(new_row)
                 entity_counter += 1
                     
@@ -138,10 +147,10 @@ def save_into_database(data, topic_name, topic_extended_name=None):
         
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        print("An error occured when saving to the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when saving to the database. \n " + str(e))
+        print("An error occured when connecting to the database. \n " + str(e))
 
 # Test function that retrieves real City data (ARPA funds), parses it, sends to Kafka, 
 # retrieves from Kafka, and saves into the database

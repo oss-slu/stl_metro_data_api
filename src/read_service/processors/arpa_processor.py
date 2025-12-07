@@ -1,3 +1,13 @@
+"""
+arpa_processor.py
+This code retrieves the ARPA funds data from the database and returns the
+data.
+Ensure Docker containers are running.
+You can go to https://localhost:5001/api/arpa to use the ARPA endpoint (which uses this code).
+
+To test this code, run python -m src.read_service.processors.arpa_processor
+so sample ARPA data is added to the database, and then the function will retrieve that data from the database.
+"""
 import os
 from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine, select
 from sqlalchemy.orm import Session, DeclarativeBase
