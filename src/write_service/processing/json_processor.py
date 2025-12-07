@@ -1,3 +1,8 @@
+"""
+json_processor.py
+This code takes the raw JSON data, turns it into a list of dictionaries, and sends it into Kafka.
+The functions in this file are used in other parts of the project.
+"""
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import json, time
@@ -75,7 +80,7 @@ def send_data(raw_data, topic_name):
                 producer.flush()
                 logging.info("Sent JSON data to Kafka: " + str(entry))
 
-            return "Sent data to Kafka successfully!<br>" + "Topic: " + topic_name + "<br>" + "Data:<br>" + str(data)
+            return "Sent data to Kafka successfully!<br>" + "Topic: " + topic_name
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
             logging.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
