@@ -23,7 +23,6 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask import send_from_directory
-from flask_cors import CORS
 import requests
 
 from dotenv import load_dotenv
