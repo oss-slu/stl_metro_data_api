@@ -178,7 +178,7 @@ To run the secondary front-end (excellence project):
 
 ## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
 Here is how you the JSON fetcher, JSON processer, and JSON consumer.
-This is also how ARPA data from the City of St. Louis Open Data Portal
+This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
 is saved into the database:
 1. Start up the project's Docker containers.
 2. Do one of the following:
@@ -191,6 +191,11 @@ is saved into the database:
    The ARPA data will be saved into the database. The terminal should display what was 
    received from Kafka and what was inserted into the database. The PostgreSQL application, 
    if connected properly to the project, should also display the table data.
+
+Once ARPA data is in the database, you can see the data in three ways:
+1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
+2. Go to http://localhost:5001/swagger to see the Swagger U.I..
+3. Start up the frontend U.I. (see Step 10 above) then go to http://localhost:9000/arpa.htm
 
 ## Development Workflow
 
