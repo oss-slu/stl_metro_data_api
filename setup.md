@@ -195,7 +195,7 @@ is saved into the database:
 Once ARPA data is in the database, you can see the data in three ways:
 1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
 2. Go to http://localhost:5001/swagger to see the Swagger U.I..
-3. Start up the frontend U.I. (see Step 10 above) then go to http://localhost:9000/arpa.htm
+3. Start up the frontend U.I. (see Step 10 above) then go to http://localhost:9000/arpa.htm to see the table.
 
 ## Development Workflow
 
