@@ -175,7 +175,23 @@ To run the secondary front-end (excellence project):
    - Go to the `frontend` folder in your terminal.
    - Run `python -m http.server 9000`
    - Go to `http://localhost:9000` in your web browser.
-   
+
+## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
+Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+This is also how ARPA data from the City of St. Louis Open Data Portal
+is saved into the database:
+1. Start up the project's Docker containers.
+2. Do one of the following:
+   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   You should see a webpage displaying what was saved 
+   in the database along with the Kafka status. The PostgreSQL 
+   application, if connected properly to the project, should also display the table data.
+
+   - OR run `python -m src.write_service.consumers.json_consumer` from the project's root folder. 
+   The ARPA data will be saved into the database. The terminal should display what was 
+   received from Kafka and what was inserted into the database. The PostgreSQL application, 
+   if connected properly to the project, should also display the table data.
+
 ## Development Workflow
 
 - **Branching**: Create feature branches from `develop` (e.g., `git checkout develop && git checkout -b feature/sprint1-dev1-kafka-setup`).
