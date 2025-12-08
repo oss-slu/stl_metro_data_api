@@ -61,7 +61,7 @@ def download_and_extract_csv(url):
     except Exception as e:
         # Clean up temp directory on error
         shutil.rmtree(temp_dir, ignore_errors=True)
-        logger.error(f"❌ Download failed, cleaned up temp directory")
+        logger.error("❌ Download failed, cleaned up temp directory")
         raise
 
 def parse_datetime(date_str):
@@ -162,7 +162,7 @@ def process_and_store(csv_file, session):
     active_count = session.query(CSBServiceRequest).filter_by(is_active=1).count()
     inactive_count = session.query(CSBServiceRequest).filter_by(is_active=0).count()
     
-    logger.info(f"✓ Pipeline complete!")
+    logger.info("✓ Pipeline complete!")
     logger.info(f"  Total inserted: {inserted:,}")
     logger.info(f"  Skipped: {skipped:,}")
     logger.info(f"  Active records: {active_count:,}")
