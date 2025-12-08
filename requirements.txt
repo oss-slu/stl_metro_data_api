@@ -1,5 +1,6 @@
 flask==3.0.0
 flask-restful==0.3.10
+Flask-CORS==6.0.1
 kafka-python==2.2.0
 psycopg2-binary>=2.9.10
 pandas>=2.0.3,<3.0
