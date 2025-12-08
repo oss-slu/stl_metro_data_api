@@ -342,7 +342,7 @@ def get_csb_services():
             https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
     Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
     """
-    from processors.csb_service_processor import get_csb_service_data
+    from src.read_service.processors.csb_service_processor import get_csb_service_data
     
     try:
         db = SessionLocal()
