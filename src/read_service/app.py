@@ -12,17 +12,21 @@ Integrates with write_service via shared PG (CQRS separation).
 """
 
 import os
+import sys
 import webbrowser
 import threading
-from flask import Flask, jsonify, render_template, render_template_string
+from flask import Flask, jsonify, render_template, render_template_string, send_from_directory
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
-from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask_cors import CORS
 import requests
+
+# Add the project root to path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, project_root)
 
 from dotenv import load_dotenv
 
@@ -98,9 +102,11 @@ def arpa():
 @app.route('/')
 def main():
     """
-    For now, we just show a simple webpage.
+    Main landing page - shows project info and links to all dashboards.
+    Renders: frontend/index.htm
     """
-    return render_template("index.html")
+    frontend_path = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend')
+    return send_from_directory(frontend_path, 'index.htm')
 
 # Basic health check endpoint (Query side: Check PG connection)
 @app.route('/health', methods=['GET'])
@@ -147,6 +153,18 @@ def get_events(event_type):
     except Exception as e:
         app.logger.error(f"Event query failed: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/arpa-dashboard')
+def arpa_dashboard():
+    '''CSB 311 dashboard for non-technical users'''
+    frontend_path = os.path.join(os.path.dirname(__file__), '..','..','frontend')
+    return send_from_directory(frontend_path, 'arpa.htm')
+    
+@app.route('/csb-dashboard')
+def csb_dashboard():
+    '''CSB 311 dashboard for non-technical users'''
+    frontend_path = os.path.join(os.path.dirname(__file__), '..','..','frontend')
+    return send_from_directory(frontend_path, 'csb.htm')
 
 # Basic API endpoint for unique processes (e.g., query processed raw data)
 @app.route('/data/<data_type>', methods=['GET'])
@@ -314,34 +332,6 @@ def internal_error(error):
 
 @app.route("/csb", methods=["GET"])
 def get_csb_services():
-    """
-    GET endpoint for active CSB (Citizens' Service Bureau) service requests.
-    
-    Retrieves all active records (is_active=1) from csb_service_requests table.
-    Each record includes a source URL linking back to the original data source.
-    
-    Returns:
-        JSON array of active CSB 311 service request records
-        
-    Example response:
-        [
-            {
-                "id": 1,
-                "service_name": "Refuse Collection-Missed Pickup",
-                "contact_info": {
-                    "caller_type": "Resident",
-                    "neighborhood": "Downtown",
-                    "ward": "7"
-                },
-                "source_url": "https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5",
-                ...
-            }
-        ]
-        
-    Source: CSB Service Requests (311) Dataset
-            https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
-    Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
-    """
     from processors.csb_service_processor import get_csb_service_data
     
     try:

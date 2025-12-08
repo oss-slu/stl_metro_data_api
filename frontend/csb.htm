@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STL CSB 311 Service Requests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background-color: #2563eb;
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .error-banner {
+            background-color: #fbbf24;
+            color: #78350f;
+            padding: 1rem;
+            margin: 1rem auto;
+            border-radius: 8px;
+            max-width: 800px;
+            display: none;
+        }
+
+        .error-banner.show {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: -2rem 2rem 2rem 2rem;
+            padding: 0 1rem;
+        }
+
+        .stat-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        /* Filters */
+        .filters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 0 2rem 1.5rem 2rem;
+            padding: 0 1rem;
+        }
+
+        .filters-container input,
+        .filters-container select {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background-color: white;
+            color: #1f2937;
+            width: 100%;
+        }
+
+        .filters-container input:focus,
+        .filters-container select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Results count */
+        .results-count {
+            margin: 0 2rem 1rem 2rem;
+            padding: 0 1rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Requests */
+        .requests-container {
+            margin: 0 2rem;
+            padding: 0 1rem 2rem 1rem;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .request-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: box-shadow 0.2s;
+        }
+
+        .request-card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .request-title {
+            font-size: 1.25rem;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .active-badge {
+            background-color: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .request-description {
+            color: #6b7280;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .request-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .detail-item {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .source-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-results {
+            background-color: white;
+            padding: 3rem;
+            text-align: center;
+            border-radius: 8px;
+            color: #6b7280;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: #1f2937;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .footer p {
+            margin: 0.5rem 0;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading CSB 311 data...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="content" class="hidden">
+        <!-- Header -->
+        <header class="header">
+            <h1>STL CSB 311 Service Requests</h1>
+            <p>Citizens' Service Bureau - Active Requests Dashboard</p>
+            <div id="errorBanner" class="error-banner">
+                ⚠️ Could not connect to API - Please ensure backend is running on port 5003
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Total Active</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Service Types</div>
+                <div class="stat-value" id="statServices">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Wards</div>
+                <div class="stat-value" id="statWards">0</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search requests..."
+            >
+            <select id="wardSelect">
+                <option value="all">All Wards</option>
+            </select>
+            <select id="serviceSelect">
+                <option value="all">All Services</option>
+            </select>
+        </div>
+
+        <!-- Results Count -->
+        <div class="results-count" id="resultsCount">
+            Showing 0 active service requests
+        </div>
+
+        <!-- Requests List -->
+        <div class="requests-container" id="requestsContainer">
+            <!-- Requests will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p id="footerYear"></p>
+            <p>
+                Data source: 
+                <a href="https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5" target="_blank">
+                    St. Louis Open Data
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // State
+        let allRequests = [];
+        let filteredRequests = [];
+
+        // DOM Elements
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('content');
+        const errorBanner = document.getElementById('errorBanner');
+        const searchInput = document.getElementById('searchInput');
+        const wardSelect = document.getElementById('wardSelect');
+        const serviceSelect = document.getElementById('serviceSelect');
+        const requestsContainer = document.getElementById('requestsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const statTotal = document.getElementById('statTotal');
+        const statServices = document.getElementById('statServices');
+        const statWards = document.getElementById('statWards');
+
+        // Set footer year
+        document.getElementById('footerYear').textContent = `${new Date().getFullYear()} SLU Open Source`;
+
+        // Fetch data from API
+        async function fetchData() {
+            try {
+                const response = await fetch('http://localhost:5003/csb');
+                if (!response.ok) throw new Error('API request failed');
+                
+                const data = await response.json();
+                allRequests = data;
+                filteredRequests = data;
+                
+                populateFilters();
+                updateStats();
+                renderRequests();
+                
+                // Hide loading, show content
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                errorBanner.classList.add('show');
+                
+                // Show content even with error (just no data)
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+            }
+        }
+
+        // Populate filter dropdowns
+        function populateFilters() {
+            // Get unique wards
+            const wards = [...new Set(allRequests
+                .map(r => r.contact_info?.ward)
+                .filter(Boolean))]
+                .sort();
+            
+            wards.forEach(ward => {
+                const option = document.createElement('option');
+                option.value = ward;
+                option.textContent = `Ward ${ward}`;
+                wardSelect.appendChild(option);
+            });
+
+            // Get unique services
+            const services = [...new Set(allRequests
+                .map(r => r.service_name)
+                .filter(Boolean))]
+                .sort();
+            
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service;
+                option.textContent = service;
+                serviceSelect.appendChild(option);
+            });
+        }
+
+        // Filter requests
+        function filterRequests() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedWard = wardSelect.value;
+            const selectedService = serviceSelect.value;
+
+            filteredRequests = allRequests.filter(request => {
+                const matchesSearch = !searchTerm || 
+                    request.service_name?.toLowerCase().includes(searchTerm) ||
+                    request.description?.toLowerCase().includes(searchTerm) ||
+                    request.contact_info?.neighborhood?.toLowerCase().includes(searchTerm);
+                
+                const matchesWard = selectedWard === 'all' || 
+                    request.contact_info?.ward === selectedWard;
+                
+                const matchesService = selectedService === 'all' || 
+                    request.service_name === selectedService;
+                
+                return matchesSearch && matchesWard && matchesService;
+            });
+
+            updateStats();
+            renderRequests();
+        }
+
+        // Update statistics
+        function updateStats() {
+            statTotal.textContent = filteredRequests.length;
+            
+            const uniqueServices = new Set(filteredRequests.map(r => r.service_name));
+            statServices.textContent = uniqueServices.size;
+            
+            const uniqueWards = new Set(filteredRequests
+                .map(r => r.contact_info?.ward)
+                .filter(Boolean));
+            statWards.textContent = uniqueWards.size;
+
+            resultsCount.textContent = `Showing ${filteredRequests.length} active service requests`;
+        }
+
+        // Render requests
+        function renderRequests() {
+            if (filteredRequests.length === 0) {
+                requestsContainer.innerHTML = `
+                    <div class="no-results">
+                        <p>No requests found matching your filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            requestsContainer.innerHTML = filteredRequests
+                .map(request => createRequestCard(request))
+                .join('');
+        }
+
+        // Create request card HTML
+        function createRequestCard(request) {
+            const formatDate = (dateStr) => {
+                if (!dateStr) return 'N/A';
+                return new Date(dateStr).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            };
+
+            return `
+                <div class="request-card">
+                    <div class="request-header">
+                        <h3 class="request-title">${request.service_name || 'Unknown Service'}</h3>
+                        <span class="active-badge">Active</span>
+                    </div>
+                    
+                    ${request.description ? `
+                        <p class="request-description">${request.description}</p>
+                    ` : ''}
+                    
+                    <div class="request-details">
+                        ${request.contact_info?.ward ? `
+                            <span class="detail-item">📍 Ward ${request.contact_info.ward}</span>
+                        ` : ''}
+                        ${request.contact_info?.neighborhood ? `
+                            <span class="detail-item">🏘️ ${request.contact_info.neighborhood}</span>
+                        ` : ''}
+                        ${request.data_posted_on ? `
+                            <span class="detail-item">📅 ${formatDate(request.data_posted_on)}</span>
+                        ` : ''}
+                        ${request.contact_info?.caller_type ? `
+                            <span class="detail-item">👤 ${request.contact_info.caller_type}</span>
+                        ` : ''}
+                    </div>
+                    
+                    ${request.source_url ? `
+                        <a href="${request.source_url}" target="_blank" rel="noopener noreferrer" class="source-link">
+                            View source data →
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', filterRequests);
+        wardSelect.addEventListener('change', filterRequests);
+        serviceSelect.addEventListener('change', filterRequests);
+
+        // Load data on page load
+        fetchData();
+    </script>
+</body>
+</html>

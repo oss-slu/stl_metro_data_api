@@ -3,7 +3,7 @@
 Database models for storing web-scraped data.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, JSON, create_engine
+from sqlalchemy import Column, Integer, String, DateTime, JSON, Text, TIMESTAMP, func, create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timezone
@@ -76,6 +76,31 @@ class CSBServiceRequest(Base):
     
     raw_json = Column(JSON, nullable=False)  # Store complete data
     ingested_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+# NOTE: This function was moved from sqlalchemy.py to avoid import conflicts.
+# Import it from models.py instead: from models import get_or_create_table_class
+# Dynamic table creation for PDF processing, should change def name to pdf tables or something
+_dynamic_models = {}
+
+def get_or_create_table_class(table_name: str):
+    """
+    Creates dynamic SQLAlchemy table classes for PDF entity extraction.
+    Used by PDF processing workflows.
+    """
+    if table_name in _dynamic_models:
+        return _dynamic_models[table_name]
+
+    class DynamicTable(Base):
+        __tablename__ = table_name
+        id = Column(Integer, primary_key=True)
+        pdf_id = Column(String, nullable=False)
+        entities = Column(JSON, nullable=False)
+        snippet = Column(Text)
+        tables = Column(JSON)
+        created_at = Column(TIMESTAMP, server_default=func.now())
+
+    _dynamic_models[table_name] = DynamicTable
+    return DynamicTable
 
 def get_db_engine():  # create database engine from .env config
     encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
