@@ -9,11 +9,17 @@ To test this code, run python -m src.read_service.processors.arpa_processor
 so sample ARPA data is added to the database, and then the function will retrieve that data from the database.
 """
 import os
+import sys
 from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine, select
 from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
+
+# add project root to the path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, project_root)
+
 from src.write_service.ingestion.json_fetcher import get_json
 
 # Configuration
