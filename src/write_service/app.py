@@ -21,8 +21,21 @@ def test_json():
     sends it to Kafka, then retrieves from Kafka, and finally saves into the database.
     Results and messages are displayed the results to the user.
     This function tests the JSON fetcher, JSON processor, and JSON consumer.
-    Make sure Docker containers are up and running first.
-    Go to http://localhost:5000/json to see it for yourself!
+
+    Here is how you run my JSON fetcher, JSON processer, and JSON consumer.
+    This is also how ARPA data from the City of St. Louis Open Data Portal
+    is saved into the database:
+        1. Start up the project's Docker containers.
+        2. Do one of the following:
+            - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+            You should see a webpage displaying what was saved 
+            in the database along with the Kafka status. The PostgreSQL 
+            application, if connected properly to the project, should also display the table data.
+
+            - OR run python -m src.write_service.consumers.json_consumer from the project's root folder. 
+            The ARPA data will be saved into the database. The terminal should display what was 
+            received from Kafka and what was inserted into the database. The PostgreSQL application, 
+            if connected properly to the project, should also display the table data.
     """
 
     # Grab and parse data from URL, also send to Kafka

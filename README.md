@@ -85,6 +85,27 @@ stl_metro_dat_api/
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
 
+## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
+Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
+is saved into the database:
+1. Start up the project's Docker containers.
+2. Do one of the following:
+   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   You should see a webpage displaying what was saved 
+   in the database along with the Kafka status. The PostgreSQL 
+   application, if connected properly to the project, should also display the table data.
+
+   - OR run `python -m src.write_service.consumers.json_consumer` from the project's root folder. 
+   The ARPA data will be saved into the database. The terminal should display what was 
+   received from Kafka and what was inserted into the database. The PostgreSQL application, 
+   if connected properly to the project, should also display the table data.
+
+Once ARPA data is in the database, you can see the data in three ways:
+1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
+2. Go to http://localhost:5001/swagger to see the Swagger U.I..
+3. Start up the frontend U.I. (see Step 5 under **Running the Project**) then go to http://localhost:9000/arpa.htm to see the table.
+
 ## Getting Started with Contributions
 
 Thank you so much for wanting to contribute to our project! Please see the [Contribution Guide](/docs/CONTRIBUTOR_JOURNEY_MAP.md) on how you can help.
