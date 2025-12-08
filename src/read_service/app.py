@@ -18,6 +18,7 @@ import threading
 from flask import Flask, jsonify, render_template, render_template_string, send_from_directory
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
+from pytest import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
