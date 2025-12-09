@@ -335,17 +335,12 @@ def internal_error(error):
 @app.route("/csb", methods=["GET"])
 def get_csb_services():
     try:
-        db = None
-        # Only create DB session when not running tests
-        if not app.config.get("TESTING"):
-            db = SessionLocal()
+        db = SessionLocal()
         data = get_csb_service_data(db)
-        if db:
-            db.close()
+        db.close()
         return jsonify(data), 200
     except Exception as e:
         app.logger.error(f"CSB Service API error: {e}")
-        return jsonify({"error": "Internal server error"}), 500
     
 def open_browser():
     """Open Swagger UI in browser."""
