@@ -21,11 +21,17 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 import json, time
 import os
+import sys
 from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine
 from sqlalchemy.orm import Session, DeclarativeBase
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
+
+# Add the project root to path
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, project_root)
+
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
 
