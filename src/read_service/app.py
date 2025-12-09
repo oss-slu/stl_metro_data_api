@@ -24,6 +24,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask_cors import CORS
 import requests
+from src.read_service.processors.arpa_processor import retrieve_from_database, save_into_database
+from src.read_service.processors.csb_service_processor import get_csb_service_data
 
 # Add the project root to path
 project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
@@ -333,7 +335,6 @@ def internal_error(error):
 
 @app.route("/csb", methods=["GET"])
 def get_csb_services():
-    from src.read_service.processors.csb_service_processor import get_csb_service_data
     
     try:
         db = SessionLocal()
