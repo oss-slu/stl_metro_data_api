@@ -334,11 +334,14 @@ def internal_error(error):
 
 @app.route("/csb", methods=["GET"])
 def get_csb_services():
-    
     try:
-        db = SessionLocal()
+        db = None
+        # Only create DB session when not running tests
+        if not app.config.get("TESTING"):
+            db = SessionLocal()
         data = get_csb_service_data(db)
-        db.close()
+        if db:
+            db.close()
         return jsonify(data), 200
     except Exception as e:
         app.logger.error(f"CSB Service API error: {e}")
