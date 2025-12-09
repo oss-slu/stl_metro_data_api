@@ -333,7 +333,7 @@ def internal_error(error):
 
 @app.route("/csb", methods=["GET"])
 def get_csb_services():
-    from processors.csb_service_processor import get_csb_service_data
+    from src.read_service.processors.csb_service_processor import get_csb_service_data
     
     try:
         db = SessionLocal()

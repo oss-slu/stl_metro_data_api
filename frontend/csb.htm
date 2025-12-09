@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* Header */
         .header {
             background-color: #2563eb;
             color: white;
@@ -36,8 +35,8 @@
         }
 
         .error-banner {
-            background-color: #fbbf24;
-            color: #78350f;
+            background-color: #ef4444;
+            color: white;
             padding: 1rem;
             margin: 1rem auto;
             border-radius: 8px;
@@ -49,7 +48,6 @@
             display: block;
         }
 
-        /* Loading spinner */
         .loading {
             display: flex;
             flex-direction: column;
@@ -72,7 +70,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Stats */
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -103,7 +100,6 @@
             color: #1f2937;
         }
 
-        /* Filters */
         .filters-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -130,7 +126,6 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        /* Results count */
         .results-count {
             margin: 0 2rem 1rem 2rem;
             padding: 0 1rem;
@@ -139,7 +134,6 @@
             font-weight: 500;
         }
 
-        /* Requests */
         .requests-container {
             margin: 0 2rem;
             padding: 0 1rem 2rem 1rem;
@@ -218,7 +212,6 @@
             color: #6b7280;
         }
 
-        /* Footer */
         .footer {
             background-color: #1f2937;
             color: white;
@@ -246,24 +239,18 @@
     </style>
 </head>
 <body>
-    <!-- Loading State -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <p>Loading CSB 311 data...</p>
     </div>
 
-    <!-- Main Content -->
     <div id="content" class="hidden">
-        <!-- Header -->
         <header class="header">
             <h1>STL CSB 311 Service Requests</h1>
             <p>Citizens' Service Bureau - Active Requests Dashboard</p>
-            <div id="errorBanner" class="error-banner">
-                ⚠️ Could not connect to API - Please ensure backend is running on port 5003
-            </div>
+            <div id="errorBanner" class="error-banner"></div>
         </header>
 
-        <!-- Stats -->
         <div class="stats-container">
             <div class="stat-card">
                 <div class="stat-label">Total Active</div>
@@ -279,13 +266,8 @@
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="filters-container">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Search requests..."
-            >
+            <input type="text" id="searchInput" placeholder="Search requests...">
             <select id="wardSelect">
                 <option value="all">All Wards</option>
             </select>
@@ -294,17 +276,12 @@
             </select>
         </div>
 
-        <!-- Results Count -->
         <div class="results-count" id="resultsCount">
             Showing 0 active service requests
         </div>
 
-        <!-- Requests List -->
-        <div class="requests-container" id="requestsContainer">
-            <!-- Requests will be inserted here by JavaScript -->
-        </div>
+        <div class="requests-container" id="requestsContainer"></div>
 
-        <!-- Footer -->
         <footer class="footer">
             <p id="footerYear"></p>
             <p>
@@ -317,11 +294,9 @@
     </div>
 
     <script>
-        // State
         let allRequests = [];
         let filteredRequests = [];
 
-        // DOM Elements
         const loading = document.getElementById('loading');
         const content = document.getElementById('content');
         const errorBanner = document.getElementById('errorBanner');
@@ -334,16 +309,21 @@
         const statServices = document.getElementById('statServices');
         const statWards = document.getElementById('statWards');
 
-        // Set footer year
         document.getElementById('footerYear').textContent = `${new Date().getFullYear()} SLU Open Source`;
 
-        // Fetch data from API
         async function fetchData() {
             try {
-                const response = await fetch('http://localhost:5003/csb');
-                if (!response.ok) throw new Error('API request failed');
+                // Use relative URL instead of hardcoded localhost
+                const response = await fetch('/csb');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API request failed: ${response.status} - ${errorText}`);
+                }
                 
                 const data = await response.json();
+                console.log('Fetched data:', data);
+                
                 allRequests = data;
                 filteredRequests = data;
                 
@@ -351,23 +331,20 @@
                 updateStats();
                 renderRequests();
                 
-                // Hide loading, show content
                 loading.classList.add('hidden');
                 content.classList.remove('hidden');
                 
             } catch (error) {
                 console.error('Error fetching data:', error);
+                errorBanner.textContent = `⚠️ Error: ${error.message}`;
                 errorBanner.classList.add('show');
                 
-                // Show content even with error (just no data)
                 loading.classList.add('hidden');
                 content.classList.remove('hidden');
             }
         }
 
-        // Populate filter dropdowns
         function populateFilters() {
-            // Get unique wards
             const wards = [...new Set(allRequests
                 .map(r => r.contact_info?.ward)
                 .filter(Boolean))]
@@ -380,7 +357,6 @@
                 wardSelect.appendChild(option);
             });
 
-            // Get unique services
             const services = [...new Set(allRequests
                 .map(r => r.service_name)
                 .filter(Boolean))]
@@ -394,7 +370,6 @@
             });
         }
 
-        // Filter requests
         function filterRequests() {
             const searchTerm = searchInput.value.toLowerCase();
             const selectedWard = wardSelect.value;
@@ -419,7 +394,6 @@
             renderRequests();
         }
 
-        // Update statistics
         function updateStats() {
             statTotal.textContent = filteredRequests.length;
             
@@ -434,7 +408,6 @@
             resultsCount.textContent = `Showing ${filteredRequests.length} active service requests`;
         }
 
-        // Render requests
         function renderRequests() {
             if (filteredRequests.length === 0) {
                 requestsContainer.innerHTML = `
@@ -450,7 +423,6 @@
                 .join('');
         }
 
-        // Create request card HTML
         function createRequestCard(request) {
             const formatDate = (dateStr) => {
                 if (!dateStr) return 'N/A';
@@ -496,12 +468,10 @@
             `;
         }
 
-        // Event listeners
         searchInput.addEventListener('input', filterRequests);
         wardSelect.addEventListener('change', filterRequests);
         serviceSelect.addEventListener('change', filterRequests);
 
-        // Load data on page load
         fetchData();
     </script>
 </body>
