@@ -37,7 +37,6 @@ try:
     load_dotenv()
 except ImportError:
     pass
-from src.read_service.processors.arpa_processor import retrieve_from_database, save_into_database
 
 # Initialize Flask app
 app = Flask(__name__)
