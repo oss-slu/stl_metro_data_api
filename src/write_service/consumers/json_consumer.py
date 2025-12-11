@@ -29,6 +29,13 @@ import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 # Code will choose between two different hosts: 

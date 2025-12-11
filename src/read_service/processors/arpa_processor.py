@@ -9,6 +9,7 @@ Here is how you run it:
 so ARPA data from the City of St. Louis is added to the database, so the database isn't empty.
 3. Go to http://localhost:5001/api/arpa to see the ARPA endpoint (which uses this code).
 4. Go to http://localhost:5001/swagger to see the Swagger U.I..
+5. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
 """
 import os
 from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine, select
@@ -17,6 +18,13 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
+
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
