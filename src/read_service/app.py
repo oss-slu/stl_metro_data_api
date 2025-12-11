@@ -353,6 +353,22 @@ def get_csb_services():
         app.logger.error(f"CSB Service API error: {e}")
         return jsonify({"error": "Internal server error"}), 500
     
+@app.route('/api/crime', methods=['GET'])
+def get_crime_data():
+    """
+    Returns crime data from stlouis_gov_crime table.
+    """
+    try:
+        db = SessionLocal()
+        result = db.execute(text("SELECT * FROM stlouis_gov_crime ORDER BY id DESC LIMIT 500"))
+        rows = [dict(row._mapping) for row in result]
+        db.close()
+        return jsonify(rows), 200
+    except Exception as e:
+        app.logger.error(f"Crime data query failed: {e}")
+        return jsonify({"error": "Could not fetch crime data"}), 500
+
+    
 def open_browser():
     """Open Swagger UI in browser."""
     import time

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>St. Louis Crime Dashboard</title>
+
+    <!-- DataTables + jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <link rel="stylesheet" 
+        href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+
+    <style>
+        body {
+            font-family: Verdana, sans-serif;
+            margin: 25px;
+            background-color: #f2f6fa;
+        }
+
+        h1 {
+            color: #003d6b;
+            margin-bottom: 10px;
+        }
+
+        #crime-table {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #bcd2e8;
+        }
+
+        #crime-table th {
+            background-color: #d3e7ff;
+            color: #002c4d;
+            font-weight: bold;
+        }
+
+        #status-message {
+            font-size: 1rem;
+            color: #444;
+            margin-top: 6px;
+            margin-bottom: 18px;
+        }
+
+        .footer-link {
+            margin-top: 18px;
+            display: inline-block;
+        }
+    </style>
+
+    <script>
+        window.onload = function () {
+            const apiURL = window.location.origin.replace("9000", "5001") + "/api/crime";
+
+            const dataTable = new DataTable("#crime-table", {
+                processing: true,
+                order: [[2, "desc"]],
+                columns: [
+                    { data: "IncidentNum", defaultContent: "—" },
+                    { data: "Offense", defaultContent: "—" },
+                    { data: "IncidentDate", defaultContent: "—", type: "date" },
+                    { data: "Neighborhood", defaultContent: "Unknown" },
+                    { data: "District", defaultContent: "N/A", type: "num" }
+                ]
+            });
+
+            const status = document.getElementById("status-message");
+            status.innerHTML = "⏳ Loading records…";
+
+            fetch(apiURL)
+                .then(resp => resp.json())
+                .then(data => {
+                    let total = data.length;
+
+                    console.log("Fetched crime data:", total + " rows");
+                    dataTable.rows.add(data).draw();
+
+                    status.innerHTML = `Loaded ${total.toLocaleString()} incidents from the database.`;
+                })
+                .catch(err => {
+                    console.error("Fetch failed:", err);
+                    status.innerHTML = "⚠ Error loading data — check API logs.";
+                });
+        }
+    </script>
+
+
+</head>
+
+<body>
+
+    <h1>St. Louis Crime Data</h1>
+    <div id="status-message">Preparing data…</div>
+
+    <table id="crime-table" class="display">
+        <thead>
+            <tr>
+                <th>Incident #</th>
+                <th>Offense</th>
+                <th>Date</th>
+                <th>Neighborhood</th>
+                <th>Ward</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <a class="footer-link" href="index.htm">⬅ Back to Home</a>
+
+</body>
+</html>
