@@ -81,9 +81,10 @@ Edit `.env` with a text editor (e.g., VS Code). Example content:
 KAFKA_BROKER=localhost:9092
 PG_HOST=localhost
 PG_PORT=5433
+PG_PORT_DOCKER=5432
 PG_DB=stl_data
 PG_USER=postgres
-PG_PASSWORD=example_pass
+PG_PASSWORD="Welcome@123456"
 PYTHONPATH=src
 
 #Kafka
