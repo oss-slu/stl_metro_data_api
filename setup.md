@@ -81,9 +81,10 @@ Edit `.env` with a text editor (e.g., VS Code). Example content:
 KAFKA_BROKER=localhost:9092
 PG_HOST=localhost
 PG_PORT=5433
+PG_PORT_DOCKER=5432
 PG_DB=stl_data
 PG_USER=postgres
-PG_PASSWORD=example_pass
+PG_PASSWORD="Welcome@123456"
 PYTHONPATH=src
 
 #Kafka
@@ -144,7 +145,7 @@ python tests/basic_test.py
 Test the Flask skeleton for the write-side microservice.
 
 - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
-- Open a browser and go to `http://localhost:5000/`. A webpage should appear.
+- Open a browser and go to http://localhost:5000/. A webpage should appear.
 - Stop the server: `Ctrl+C`.
 
 Test the Flask skeleton for the read-side microservice.
@@ -171,10 +172,8 @@ pytest tests/
 - If tests fail, check error messages and ensure Docker services are up.
 
 ### 10. Secondary Front-end (Excellence Project)
-To run the secondary front-end (excellence project):
-   - Go to the `frontend` folder in your terminal.
-   - Run `python -m http.server 9000`
-   - Go to `http://localhost:9000` in your web browser.
+The front-end (excellence project) should automatically start with Docker.
+   - To view the secondary front-end, go to http://localhost:5001/index.htm in your web browser.
 
 ## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
 Here is how you the JSON fetcher, JSON processer, and JSON consumer.
@@ -195,7 +194,7 @@ is saved into the database:
 Once ARPA data is in the database, you can see the data in three ways:
 1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
 2. Go to http://localhost:5001/swagger to see the Swagger U.I..
-3. Start up the frontend U.I. (see Step 10 above) then go to http://localhost:9000/arpa.htm to see the table.
+3. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
 
 ## Development Workflow
 

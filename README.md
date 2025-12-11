@@ -78,10 +78,8 @@ stl_metro_dat_api/
 2. Run read-side microservice: `cd src/read_service && python app.py`.
 3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
-5. To run the secondary front-end (excellence project):
-   - Go to the `frontend` folder in your terminal.
-   - Run `python -m http.server 9000`
-   - Go to `http://localhost:9000` in your web browser.
+5. The front-end (excellence project) should automatically start with Docker.
+   - To view the secondary front-end, go to `http://localhost:5001/index.htm` in your web browser.
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
 
@@ -104,7 +102,7 @@ is saved into the database:
 Once ARPA data is in the database, you can see the data in three ways:
 1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
 2. Go to http://localhost:5001/swagger to see the Swagger U.I..
-3. Start up the frontend U.I. (see Step 5 under **Running the Project**) then go to http://localhost:9000/arpa.htm to see the table.
+3. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
 
 ## Getting Started with Contributions
 

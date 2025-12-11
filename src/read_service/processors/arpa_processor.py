@@ -9,6 +9,7 @@ Here is how you run it:
 so ARPA data from the City of St. Louis is added to the database, so the database isn't empty.
 3. Go to http://localhost:5001/api/arpa to see the ARPA endpoint (which uses this code).
 4. Go to http://localhost:5001/swagger to see the Swagger U.I..
+5. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
 """
 import os
 from sqlalchemy import Column, Integer, DateTime, JSON, String, Boolean, create_engine, select
@@ -18,12 +19,19 @@ from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
 PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT', '5433')
+PG_PORT = os.getenv('PG_PORT_DOCKER', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed

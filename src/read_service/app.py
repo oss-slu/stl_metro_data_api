@@ -96,11 +96,19 @@ def arpa():
         return jsonify(result), 200
 
 @app.route('/')
+@app.route('/index.htm')
 def main():
     """
-    For now, we just show a simple webpage.
+    The landing page for the front-end
     """
-    return render_template("index.html")
+    return render_template("index.htm")
+
+@app.route('/arpa.htm')
+def arpa_frontend_page():
+    """
+    Show the ARPA table frontend U.I.
+    """
+    return render_template("arpa.htm")
 
 # Basic health check endpoint (Query side: Check PG connection)
 @app.route('/health', methods=['GET'])
