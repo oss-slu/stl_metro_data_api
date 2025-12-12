@@ -107,7 +107,7 @@ def arpa_number_of_entries(number_of_entries):
         result = retrieve_from_database()
 
         # If number of entries bigger than dataset's length or negative, return all entries
-        if (number_of_entries == None or number_of_entries > len(result) or number_of_entries < 0):
+        if (number_of_entries is None or number_of_entries > len(result) or number_of_entries < 0):
             number_of_entries = 0
 
         # Get most recent n entries
