@@ -36,7 +36,9 @@ KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
 PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT_DOCKER', '5432')
+# Since the ARPA processor runs in Docker, it must connect to the Postgres Docker container,
+# whose port is 5432.
+PG_PORT = 5432
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
