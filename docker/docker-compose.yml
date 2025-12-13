@@ -61,7 +61,7 @@ services:
       context: ../
       dockerfile: docker/write_service/Dockerfile
     env_file:
-      - .env
+      - ../.env
     ports:
       - "5000:5000"
 
@@ -70,7 +70,7 @@ services:
       context: ../
       dockerfile: docker/read_service/Dockerfile
     env_file:
-      - .env
+      - ../.env
     ports:
       - "5001:5001"
 
