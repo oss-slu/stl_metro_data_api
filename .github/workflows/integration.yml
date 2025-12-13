@@ -21,6 +21,7 @@ jobs:
       # Host-level ports exposed by docker-compose on the runner
       # Host Postgres port (mapped from service pg 5432). Adjust if you prefer 5433.
       PG_PORT: "5433"
+      PG_PORT_DOCKER: "5432"
       PG_HOST: "localhost"
       PG_DB: "stl_data"
       PG_USER: "postgres"
@@ -39,6 +40,7 @@ jobs:
           cat > .env <<'EOF'
           PG_HOST=${{ env.PG_HOST }}
           PG_PORT=${{ env.PG_PORT }}
+          PG_PORT_DOCKER=${{ env.PG_PORT_DOCKER }}
           PG_DB=${{ env.PG_DB }}
           PG_USER=${{ env.PG_USER }}
           PG_PASSWORD=${{ env.PG_PASSWORD }}
@@ -117,6 +119,7 @@ jobs:
           # Ensure tests use the host-level ports we just exposed
           PG_HOST: ${{ env.PG_HOST }}
           PG_PORT: ${{ env.PG_PORT }}
+          PG_PORT_DOCKER: ${{ env.PG_PORT_DOCKER }}
           PG_DB: ${{ env.PG_DB }}
           PG_USER: ${{ env.PG_USER }}
           PG_PASSWORD: ${{ env.PG_PASSWORD }}
