@@ -75,7 +75,7 @@ stl_metro_dat_api/
 
 1. Start containers: `docker-compose --env-file .env -f docker/docker-compose.yml up -d`.
    - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
-   - The read-service app should also automatically start with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
+   - The read-service app along with the front-end (excellence project) should also automatically start with Docker. To run the read-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
 3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
 5. The front-end (excellence project) should automatically start with Docker.
