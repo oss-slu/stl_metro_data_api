@@ -23,6 +23,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask_cors import CORS
 import requests
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 
@@ -87,7 +92,7 @@ def arpa():
     """
     
     result = retrieve_from_database()
-    print(result)
+    logger.info(result)
     
     # Return data / message with response code
     if result is None:
@@ -112,7 +117,7 @@ def arpa_number_of_entries(number_of_entries):
 
         # Get most recent n entries
         result = result[-number_of_entries:]
-        print(result)
+        logger.info(result)
         
         # Return data / message with response code
         if result is None:
@@ -122,10 +127,10 @@ def arpa_number_of_entries(number_of_entries):
         
     # Handle errors
     except ValueError:
-        print("You did not input a valid number of entries. Please try again.")
+        logger.error("You did not input a valid number of entries. Please try again.")
         return jsonify([{"Error": "You did not input a valid number of entries. Please try again."}]), 500
     except Exception as e:
-        print("Some other error occurred! \n" + str(e))
+        logger.error("Some other error occurred! \n" + str(e))
         return jsonify([{"Error": "Some other error occurred."}]), 500
 
 @app.route('/')
@@ -372,7 +377,7 @@ def get_arpa_directly_from_City_website():
     data = response.json()
 
     # Return the data
-    print(f"Data received successfully: \n {data}")
+    logger.info(f"Data received successfully: \n {data}")
     return data
 
 @app.route('/query-stub', methods=['GET'])

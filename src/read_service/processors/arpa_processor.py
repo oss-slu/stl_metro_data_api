@@ -18,6 +18,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 try:
@@ -83,11 +88,11 @@ def retrieve_from_database():
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when retrieving data from the database. \n " + str(e))
+        logger.error("An error occured when retrieving data from the database. \n " + str(e))
         return "An error occured when retrieving data from the database."
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occured when connecting to the database. \n " + str(e))
         return "An error occured when connecting to the database."
 
 # Test saving data into database
@@ -125,10 +130,10 @@ def save_into_database(data):
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when saving to the database. \n " + str(e))
+        logger.error("An error occured when saving to the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occured when connecting to the database. \n " + str(e))
 
 # Test function that saves real City of St. Louis data (ARPA funds) to the database
 # and then retrieves from the database
