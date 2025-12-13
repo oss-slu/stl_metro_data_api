@@ -51,7 +51,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${PG_PASSWORD}
     ports:
-      - "${PG_PORT}:5432"
+      - "${PG_PORT}:{PG_PORT_DOCKER}"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ../config/pg_init.sql:/docker-entrypoint-initdb.d/pg_init.sql
