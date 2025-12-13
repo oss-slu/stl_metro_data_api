@@ -19,8 +19,12 @@ is saved into the database:
         if connected properly to the project, should also display the table data.
 """
 import requests
-import logging
 import json
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_json(url):
     """
@@ -36,7 +40,7 @@ def get_json(url):
         data = response.json()
 
         # Return the data
-        logging.info(f"Data received successfully from {url}: \n {data}")
+        logger.info(f"Data received successfully from {url}: \n {data}")
         return data
 
     except requests.exceptions.HTTPError as httpError:
@@ -51,17 +55,17 @@ def get_json(url):
         else:
             error = f"Unknown HTTP Error {code}: Unable to get JSON from {url}. \nError: {httpError}"
 
-        logging.error(error)
+        logger.error(error)
         return error
 
     except json.JSONDecodeError as jsonError:
         # If JSON data is not valid
         error = f"The JSON data is not valid. \nError: {jsonError}"
-        logging.error(error)
+        logger.error(error)
         return error
     
     except requests.exceptions.RequestException as requestError:
         # If something wrong with the connection
         error = f"Something went wrong with the connection. \nError: {requestError}"
-        logging.error(error)
+        logger.error(error)
         return error

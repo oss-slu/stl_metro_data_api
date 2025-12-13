@@ -18,6 +18,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 try:
@@ -31,7 +36,9 @@ KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
 PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT_DOCKER', '5432')
+# Since the ARPA processor runs in Docker, it must connect to the Postgres Docker container,
+# whose port is 5432.
+PG_PORT = 5432
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
@@ -83,11 +90,11 @@ def retrieve_from_database():
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when retrieving data from the database. \n " + str(e))
+        logger.error("An error occured when retrieving data from the database. \n " + str(e))
         return "An error occured when retrieving data from the database."
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occured when connecting to the database. \n " + str(e))
         return "An error occured when connecting to the database."
 
 # Test saving data into database
@@ -125,10 +132,10 @@ def save_into_database(data):
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when saving to the database. \n " + str(e))
+        logger.error("An error occured when saving to the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occured when connecting to the database. \n " + str(e))
 
 # Test function that saves real City of St. Louis data (ARPA funds) to the database
 # and then retrieves from the database

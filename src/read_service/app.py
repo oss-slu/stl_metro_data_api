@@ -23,6 +23,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask_cors import CORS
 import requests
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 
@@ -83,17 +88,50 @@ app.register_blueprint(swaggerui_blueprint)
 @app.route('/api/arpa', strict_slashes = False)
 def arpa():
     """
-    This function returns the ARPA funds data from the ARPA Processor in JSON format
+    This function returns ALL ARPA funds data from the ARPA Processor in JSON format
     """
     
     result = retrieve_from_database()
-    print(result)
+    logger.info(result)
     
     # Return data / message with response code
     if result is None:
         return jsonify([{"Response": "Data is empty"}]), 200
     else:
         return jsonify(result), 200
+
+@app.route('/api/arpa/<number_of_entries>', strict_slashes = False)
+def arpa_number_of_entries(number_of_entries):
+    """
+    This function returns the ARPA funds data from the ARPA Processor in JSON format
+    Returns entries with number of most recent entries specified in URL path
+    """
+    try:
+        number_of_entries = int(number_of_entries)
+
+        result = retrieve_from_database()
+
+        # If number of entries bigger than dataset's length or negative, return all entries
+        if (number_of_entries is None or number_of_entries > len(result) or number_of_entries < 0):
+            number_of_entries = 0
+
+        # Get most recent n entries
+        result = result[-number_of_entries:]
+        logger.info(result)
+        
+        # Return data / message with response code
+        if result is None:
+            return jsonify([{"Response": "Data is empty"}]), 200
+        else:
+            return jsonify(result), 200
+        
+    # Handle errors
+    except ValueError:
+        logger.error("You did not input a valid number of entries. Please try again.")
+        return jsonify([{"Error": "You did not input a valid number of entries. Please try again."}]), 500
+    except Exception as e:
+        logger.error("Some other error occurred! \n" + str(e))
+        return jsonify([{"Error": "Some other error occurred."}]), 500
 
 @app.route('/')
 @app.route('/index.htm')
@@ -195,12 +233,53 @@ def swagger_spec():
             },
             "/api/arpa": {
                 "get": {
-                    "summary": "Get data about ARPA funds usage",
+                    "summary": "Get data about ARPA funds usage (all entries)",
                     "tags": ["City Budget and Funding"],
-                    "description": "This endpoint retrieves information on how the City of St. Louis used ARPA (American Rescue Plan Act) funds. Data is originally from the St. Louis Open Data portal.",
+                    "description": "This endpoint retrieves information on how the City of St. Louis used ARPA (American Rescue Plan Act) funds. Data is originally from the St. Louis Open Data portal. All entries are returned.",
                     "responses": {
                         "200": {
-                            "description": "The data is a list of projects the City of St. Louis used ARPA funds on.",
+                            "description": "The data is a list of projects the City of St. Louis used ARPA funds on. All entries are returned (may be slow on some devices).",
+                            "content": {
+                                "application/json": {
+                                    "example": [
+                                        {
+                                            "id": 1,
+                                            "name": "ARPA Funds Entity #1",
+                                            "content": {
+                                                "ACCOUNT": "1000000",
+                                                "AMOUNT": 181,
+                                                "CENTER": "7000000",
+                                                "CREDIT": None,
+                                                "DATE": "August 30, 2025 00:00:00",
+                                                "DESC1": "Parking costs",
+                                                "DESC2": "",
+                                                "DESC3": "",
+                                                "FUND": "1170",
+                                                "ID": 9000000,
+                                                "ORDINANCE": 71000,
+                                                "PROJECTID": 42,
+                                                "PROJECTTITLE": "Community Health Workers",
+                                                "VENDOR": "Example Company"
+                                            },
+                                            "is_active": True,
+                                            "data_posted_on": "Sat, 06 Dec 2025 01:17:47 GMT"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/arpa/{number_of_entries}": {
+                "get": {
+                    "summary": "Get data about ARPA funds usage (specify number of entries)",
+                    "parameters": [{"name": "number_of_entries", "in": "path", "required": True, "schema": {"type": "integer"}}],
+                    "tags": ["City Budget and Funding"],
+                    "description": "This endpoint retrieves information on how the City of St. Louis used ARPA (American Rescue Plan Act) funds. Data is originally from the St. Louis Open Data portal. You can specify how many recent entries you want returned.",
+                    "responses": {
+                        "200": {
+                            "description": "The data is a list of projects the City of St. Louis used ARPA funds on. You can specify how many recent entries you want returned. If you provide a number that is bigger than the dataset's length or a negative number, all results will be returned.",
                             "content": {
                                 "application/json": {
                                     "example": [
@@ -298,7 +377,7 @@ def get_arpa_directly_from_City_website():
     data = response.json()
 
     # Return the data
-    print(f"Data received successfully: \n {data}")
+    logger.info(f"Data received successfully: \n {data}")
     return data
 
 @app.route('/query-stub', methods=['GET'])
