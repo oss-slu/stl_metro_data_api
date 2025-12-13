@@ -43,10 +43,15 @@ except ImportError:
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
+
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
 PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT', '5433')
+
+# Code will choose between two different ports:
+# PG_PORT (for local runs) and 5432 (when running in Docker)
+PG_PORT = [os.getenv('PG_PORT', '5433'), '5432']
+
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
@@ -126,15 +131,27 @@ def save_into_database(data, topic_name, topic_extended_name=None):
     
         # Connect to database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-        engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-        engine = create_engine(engine_url, echo=True)
+        
+        # Code will choose between two different ports:
+        # PG_PORT (for local runs) and 5432 (when running in Docker)
+        for port in PG_PORT:
+            try:
+                engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{port}/{PG_DB}"
+                engine = create_engine(engine_url, echo=True)
+
+                # Test connection, if fail the exception will move on to the next port
+                # If success, use this engine
+                engine.connect()
+                break
+            except Exception as e:
+                logger.error(f"An error occurred when connecting to the database at port {port}. \n " + str(e))
+                continue
 
         # Get and create the table (if it did not already exist)
         table = get_table_class(topic_name)
         Base.metadata.create_all(engine)
 
         # Now let's add stuff to the table
-        session = Session(engine)
         with Session(engine) as session:
 
             # Each entity will be a new row
@@ -169,10 +186,10 @@ def save_into_database(data, topic_name, topic_extended_name=None):
         
     # Exceptions
     except SQLAlchemyError as e:
-        logger.error("An error occured when saving to the database. \n " + str(e))
+        logger.error("An error occurred when saving to the database. \n " + str(e))
 
     except Exception as e:
-        logger.error("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occurred when connecting to the database. \n " + str(e))
 
 # Test function that retrieves real City data (ARPA funds), parses it, sends to Kafka, 
 # retrieves from Kafka, and saves into the database
