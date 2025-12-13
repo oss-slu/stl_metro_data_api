@@ -36,7 +36,7 @@ KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
 
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
-PG_HOST = os.getenv('PG_HOST', 'localhost,postgres') + ',postgres'
+PG_HOST = os.getenv('PG_HOST', 'localhost') + ',postgres'
 
 # Code will choose between two different ports:
 # PG_PORT (for local runs) and 5432 (when running in Docker)
