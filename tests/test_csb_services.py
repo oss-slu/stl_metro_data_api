@@ -7,7 +7,7 @@ https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
 """
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import sys
 import os
 
@@ -25,7 +25,7 @@ def client():
         yield client
 
 
-@patch('processors.csb_service_processor.get_csb_service_data')
+@patch('app.get_csb_service_data')
 def test_csb_api_returns_active_only(mock_get_data, client):
     """
     Unit test: Verify only active records (is_active=1) are returned.
@@ -54,7 +54,7 @@ def test_csb_api_returns_active_only(mock_get_data, client):
     assert all(record['is_active'] == 1 for record in data)
 
 
-@patch('processors.csb_service_processor.get_csb_service_data')
+@patch('app.get_csb_service_data')
 def test_csb_api_includes_source_url(mock_get_data, client):
     """
     Unit test: Verify each record includes the correct source URL.
@@ -74,7 +74,7 @@ def test_csb_api_includes_source_url(mock_get_data, client):
     assert 'stlouis-mo.gov/data/datasets/dataset.cfm?id=5' in data[0]['source_url']
 
 
-@patch('processors.csb_service_processor.get_csb_service_data')
+@patch('app.get_csb_service_data')
 def test_csb_api_returns_json_array(mock_get_data, client):
     """
     Unit test: Verify API returns a JSON array structure.
@@ -121,7 +121,7 @@ def test_csb_api_e2e_with_active_data(client):
             assert 'created_on' in record
 
 
-@patch('processors.csb_service_processor.get_csb_service_data')
+@patch('app.get_csb_service_data')
 def test_csb_api_error_handling(mock_get_data, client):
     """
     Unit test: Verify proper error handling when database query fails.
@@ -135,7 +135,7 @@ def test_csb_api_error_handling(mock_get_data, client):
     assert 'error' in response_data
 
 
-@patch('processors.csb_service_processor.get_csb_service_data')
+@patch('app.get_csb_service_data')
 def test_csb_api_empty_result(mock_get_data, client):
     """
     Unit test: Verify API handles empty results gracefully.

@@ -14,11 +14,13 @@ Integrates with write_service via shared PG (CQRS separation).
 import os
 import webbrowser
 import threading
-from flask import Flask, jsonify, render_template, render_template_string
+from src.write_service.consumers.models import StLouisCrimeStats
+from src.read_service.processors.csb_service_processor import get_csb_service_data
+from flask import Flask, jsonify, render_template, render_template_string, request
 from flask_restful import Api
 from flask_swagger_ui import get_swaggerui_blueprint
 from pytest import Session
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from flask_cors import CORS
@@ -58,6 +60,45 @@ engine_url = f"postgresql+psycopg2://{PG_USER}:{password}@{PG_HOST}:{PG_PORT}/{P
 engine = create_engine(engine_url, echo=False)  # Set echo=True for debug
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Ensure database schema is correct
+def ensure_crime_table_schema():
+    """
+    Ensure the stlouis_gov_crime table has all required columns.
+    This handles cases where the table exists but columns were added to the model later.
+    """
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        
+        # Check if table exists
+        if "stlouis_gov_crime" not in inspector.get_table_names():
+            app.logger.info("Crime table does not exist yet; will be created on first insert")
+            return
+        
+        # Get existing columns
+        existing_columns = {c["name"] for c in inspector.get_columns("stlouis_gov_crime")}
+        
+        # Define required columns
+        required_columns = {
+            "created_on": "TIMESTAMP DEFAULT NOW()",
+            "data_posted_on": "TIMESTAMP DEFAULT NOW()",
+            "is_active": "BOOLEAN DEFAULT TRUE",
+            "raw_json": "JSON NOT NULL DEFAULT '{}'"
+        }
+        
+        # Add any missing columns
+        with engine.connect() as conn:
+            for col, definition in required_columns.items():
+                if col not in existing_columns:
+                    app.logger.info(f"Adding missing column {col} to stlouis_gov_crime table")
+                    conn.execute(text(f"ALTER TABLE stlouis_gov_crime ADD COLUMN {col} {definition}"))
+            conn.commit()
+            
+    except Exception as e:
+        app.logger.warning(f"Could not ensure crime table schema: {e}")
+
+# Initialize schema on app startup
+ensure_crime_table_schema()
 
 # Make sure INFO-level logs (like from the mock consumer) show up
 app.logger.setLevel("INFO")
@@ -312,6 +353,62 @@ def swagger_spec():
                     }
                 }
             },
+            "/api/crime": {
+                "get": {
+                    "summary": "Get active crime data (paginated)",
+                    "tags": ["Crime Data"],
+                    "description": "Retrieves paginated crime statistics from the St. Louis Metropolitan Police Department (SLMPD). Returns only active records with NIBRS crime classification data.",
+                    "parameters": [
+                        {
+                            "name": "page",
+                            "in": "query",
+                            "schema": {"type": "integer"},
+                            "description": "Page number (default=1)",
+                            "required": False
+                        },
+                        {
+                            "name": "page_size",
+                            "in": "query",
+                            "schema": {"type": "integer"},
+                            "description": "Results per page (default=50, max recommended=100)",
+                            "required": False
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Paginated crime statistics",
+                            "content": {
+                                "application/json": {
+                                    "example": {
+                                        "page": 1,
+                                        "page_size": 50,
+                                        "total": 5000,
+                                        "total_pages": 100,
+                                        "crimes": [
+                                            {
+                                                "id": 1,
+                                                "created_on": "2025-12-06T10:30:00",
+                                                "data_posted_on": "2025-12-05T15:45:00",
+                                                "is_active": True,
+                                                "raw_json": {
+                                                    "incident_number": "2025001234",
+                                                    "offense": "ASSAULT",
+                                                    "ward": "3",
+                                                    "latitude": 38.627,
+                                                    "longitude": -90.225
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            "description": "Invalid pagination parameters"
+                        }
+                    }
+                }
+            },
             "/csb": {
                 "get": {
                     "summary": "Get active CSB service requests",
@@ -357,11 +454,12 @@ def swagger_spec():
                     "responses": {"200": {"description": "Data list"}}
                 }
             }
+            
         }
     })
 
 
-@app.route('/arpa_direct_retrieval')
+@app.route('/arpa_direct_retrieval', endpoint='arpa_direct_retrieval')
 def get_arpa_directly_from_City_website():
     """
     Function that retrieves ARPA funds directly from City website and returns as JSON.
@@ -387,8 +485,71 @@ def query_stub():
     This does not connect to the database.
     It just proves that the read_service has a query stub.
     """
-    return jsonify({"message": "This is a query stub endpoint"})
-    
+    return jsonify({"message": "This is a query stub endpoint"})    
+
+@app.route('/api/crime', methods=['GET'])
+def get_crime_data():
+    """
+    Retrieve active crime data from the `stlouis_gov_crime` table using SQLAlchemy ORM.
+
+    Query Parameters:
+      - page (int): Page number (default=1)
+      - page_size (int): Results per page (default=50)
+
+    Returns:
+      Paginated JSON list of crime records.
+    """
+    try:
+        # Validate pagination parameters
+        page = int(request.args.get("page", 1))
+        page_size = int(request.args.get("page_size", 50))
+        if page < 1 or page_size < 1:
+            raise ValueError("Page and page_size must be positive integers")
+    except ValueError:
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+
+    offset = (page - 1) * page_size
+
+    db = SessionLocal()
+    try:
+        # Count total active records
+        total = db.query(func.count()).select_from(StLouisCrimeStats)\
+                  .filter(StLouisCrimeStats.is_active.is_(True))\
+                  .scalar()
+
+        # Fetch paginated active crime records
+        rows = db.query(StLouisCrimeStats)\
+                 .filter(StLouisCrimeStats.is_active.is_(True))\
+                 .order_by(StLouisCrimeStats.data_posted_on.desc())\
+                 .limit(page_size)\
+                 .offset(offset)\
+                 .all()
+
+        # Convert ORM objects to dict
+        crimes = []
+        for r in rows:
+            crimes.append({
+                "id": r.id,
+                "created_on": r.created_on.isoformat(),
+                "data_posted_on": r.data_posted_on.isoformat() if r.data_posted_on else None,
+                "is_active": r.is_active,
+                "raw_json": r.raw_json
+            })
+
+        return jsonify({
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size,
+            "crimes": crimes
+        })
+
+    except Exception as e:
+        app.logger.error(f"Crime query failed: {e}")
+        return jsonify({"error": "Failed to query crime data"}), 500
+    finally:
+        db.close()
+
 # Error handler for 404
 @app.errorhandler(404)
 def not_found(error):
@@ -429,8 +590,6 @@ def get_csb_services():
             https://www.stlouis-mo.gov/data/datasets/dataset.cfm?id=5
     Data: https://www.stlouis-mo.gov/data/upload/data-files/csb.zip
     """
-    from processors.csb_service_processor import get_csb_service_data
-    
     try:
         db = SessionLocal()
         data = get_csb_service_data(db)
@@ -439,7 +598,7 @@ def get_csb_services():
     except Exception as e:
         app.logger.error(f"CSB Service API error: {e}")
         return jsonify({"error": "Internal server error"}), 500
-    
+     
 def open_browser():
     """Open Swagger UI in browser."""
     import time
