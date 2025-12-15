@@ -7,6 +7,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    networks:
+      - kafka-net
   
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -20,6 +22,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - kafka-net
     
   kafka-init:
     image: confluentinc/cp-kafka:7.6.0
@@ -55,6 +59,8 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ../config/pg_init.sql:/docker-entrypoint-initdb.d/pg_init.sql
+    networks:
+      - kafka-net
       
   write_service:
     build:
@@ -93,6 +99,31 @@ services:
       PROCESSED_TOPIC: "processed-data-topic"
     networks:
       - kafka-net
+
+  crime_consumer:
+    build:
+      context: ../
+      dockerfile: docker/write_service/Dockerfile
+    command: ["python", "-m", "src.write_service.consumers.crime_consumer"]
+    env_file:
+      - ../.env
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: ${PG_DB}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      DATABASE_URL: "postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}"
+      KAFKA_BROKER: "kafka:9092"
+      RAW_TOPIC: ${RAW_TOPIC}
+      CRIME_CSV: "/data/crime_data.csv"
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - kafka-net
+    volumes:
+      - ../frontend/crime_data.csv:/data/crime_data.csv:ro
 
 volumes:
   pg_data:
