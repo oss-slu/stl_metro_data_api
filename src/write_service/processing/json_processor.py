@@ -24,6 +24,10 @@ import json, time
 from jsonschema import validate, ValidationError
 import logging
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Ensure it is a list of dictionaries (array=list, object=dictionary)
 schema = {
     "type": "array",
@@ -66,14 +70,14 @@ def send_data(raw_data, topic_name):
 
     # No data received
     if not data:
-        logging.error("No data to send!")
+        logger.error("No data to send!")
         return "No data to send to Kafka!"
 
     # Make sure data in right format (schema)
     try:
         validate(instance=data, schema=schema)
     except ValidationError as error:
-        logging.error("Failed to send to Kafka. Data is not in valid format!\n" + str(error.message))
+        logger.error("Failed to send to Kafka. Data is not in valid format!\n" + str(error.message))
         return "Failed to send to Kafka. Data is not in valid format! <br> Error: <br>" + str(error.message)
 
     # Send to Kafka (we will try 3 times just in case Kafka isn't available yet)
@@ -93,18 +97,18 @@ def send_data(raw_data, topic_name):
             for entry in data:
                 producer.send(topic_name, entry)
                 producer.flush()
-                logging.info("Sent JSON data to Kafka: " + str(entry))
+                logger.info("Sent JSON data to Kafka: " + str(entry))
 
             return "Sent data to Kafka successfully!<br>" + "Topic: " + topic_name
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
-            logging.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
+            logger.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
             time.sleep(5)
 
         except Exception as error:
             # Something else went wrong when sending to Kafka!
-            logging.error("Failed to send to Kafka!\n", str(error))
+            logger.error("Failed to send to Kafka!\n", str(error))
             return "Failed to send data to Kafka! <br> Error: " + str(error)
     
-        logging.error("Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page.")
+        logger.error("Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page.")
         return "Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page."

@@ -81,7 +81,6 @@ Edit `.env` with a text editor (e.g., VS Code). Example content:
 KAFKA_BROKER=localhost:9092
 PG_HOST=localhost
 PG_PORT=5433
-PG_PORT_DOCKER=5432
 PG_DB=stl_data
 PG_USER=postgres
 PG_PASSWORD="Welcome@123456"
@@ -146,18 +145,12 @@ Test the Flask skeleton for the write-side microservice.
 
 - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
 - Open a browser and go to http://localhost:5000/. A webpage should appear.
-- Stop the server: `Ctrl+C`.
 
 Test the Flask skeleton for the read-side microservice.
 
-```bash
-cd src/read_service
-python app.py
-```
-
-- Open a browser or use `curl`: `curl http://localhost:5001/swagger`.
-- Expected output: Swagger opened in browser.
-- Stop the server: `Ctrl+C`.
+- The read-service app along with the front-end (excellence project) should also automatically start with Docker. To run the read-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
+- Open a browser and go to http://localhost:5001/.
+- Or use `curl`: `curl http://localhost:5001/swagger`. Expected output: Swagger opened in browser.
 
 ### 9. Run Tests
 

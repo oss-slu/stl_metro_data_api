@@ -28,6 +28,11 @@ from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
 from src.write_service.processing.json_processor import send_data
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 try:
@@ -38,10 +43,15 @@ except ImportError:
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
+
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
-PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT', '5433')
+PG_HOST = os.getenv('PG_HOST', 'localhost') + ',postgres'
+
+# Code will choose between two different ports:
+# PG_PORT (for local runs) and 5432 (when running in Docker)
+PG_PORT = [os.getenv('PG_PORT', '5433'), '5432']
+
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
@@ -89,18 +99,18 @@ def retrieve_from_kafka(topic_name):
                     for message in consumer:
                         data = message.value
                         received_data.append(data)
-                        print(f"Received message: {data}")
+                        logger.info(f"Received message: {data}")
                 except Exception as e:
-                    print(f"Database error: {e}")
+                    logger.error(f"Database error: {e}")
                 
                 consumer.close()
                 return received_data
             except NoBrokersAvailable:
                 # Connection failed, try again
-                print(f"Kafka consumer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
+                logger.error(f"Kafka consumer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
                 time.sleep(5)
     except Exception as e:
-        print(f"Something went wrong with Kafka Consumer!: \n {e}")
+        logger.error(f"Something went wrong with Kafka Consumer!: \n {e}")
         raise
 
 def save_into_database(data, topic_name, topic_extended_name=None):
@@ -116,20 +126,32 @@ def save_into_database(data, topic_name, topic_extended_name=None):
     try:
         # Ensure data is in right format (list) else abort!
         if (not isinstance(data, list)):
-            print("The data to be saved into the database is not valid! It must be a list.")
+            logger.error("The data to be saved into the database is not valid! It must be a list.")
             return
     
         # Connect to database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-        engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-        engine = create_engine(engine_url, echo=True)
+        
+        # Code will choose between two different ports:
+        # PG_PORT (for local runs) and 5432 (when running in Docker)
+        for port in PG_PORT:
+            try:
+                engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{port}/{PG_DB}"
+                engine = create_engine(engine_url, echo=True)
+
+                # Test connection, if fail the exception will move on to the next port
+                # If success, use this engine
+                engine.connect()
+                break
+            except Exception as e:
+                logger.error(f"An error occurred when connecting to the database at port {port}. \n " + str(e))
+                continue
 
         # Get and create the table (if it did not already exist)
         table = get_table_class(topic_name)
         Base.metadata.create_all(engine)
 
         # Now let's add stuff to the table
-        session = Session(engine)
         with Session(engine) as session:
 
             # Each entity will be a new row
@@ -140,7 +162,7 @@ def save_into_database(data, topic_name, topic_extended_name=None):
                 try:
                     json.dumps(entity)
                 except json.JSONDecodeError:
-                    print("Entity " + str(entity) + " is not valid JSON. Going to the next entity.")
+                    logger.error("Entity " + str(entity) + " is not valid JSON. Going to the next entity.")
                     continue
                 
                 new_row = table(
@@ -160,14 +182,14 @@ def save_into_database(data, topic_name, topic_extended_name=None):
         else:
             return session
 
-        print("PostgreSQL: OK")
+        logger.info("PostgreSQL: OK")
         
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when saving to the database. \n " + str(e))
+        logger.error("An error occurred when saving to the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occurred when connecting to the database. \n " + str(e))
 
 # Test function that retrieves real City data (ARPA funds), parses it, sends to Kafka, 
 # retrieves from Kafka, and saves into the database

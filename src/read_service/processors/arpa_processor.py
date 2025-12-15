@@ -18,6 +18,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import urllib.parse
 from src.write_service.ingestion.json_fetcher import get_json
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 try:
@@ -28,10 +33,15 @@ except ImportError:
 
 # Configuration
 KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
+
 # Code will choose between two different hosts: 
 # localhost (for local runs) and postgres (when running in Docker)
-PG_HOST = os.getenv('PG_HOST', 'localhost,postgres')
-PG_PORT = os.getenv('PG_PORT_DOCKER', '5432')
+PG_HOST = os.getenv('PG_HOST', 'localhost') + ',postgres'
+
+# Code will choose between two different ports:
+# PG_PORT (for local runs) and 5432 (when running in Docker)
+PG_PORT = [os.getenv('PG_PORT', '5433'), '5432']
+
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
 PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
@@ -60,10 +70,22 @@ def retrieve_from_database():
 
         # Connect to database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-        engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-        engine = create_engine(engine_url, echo=True)
 
-        session = Session(engine)
+        # Code will choose between two different ports:
+        # PG_PORT (for local runs) and 5432 (when running in Docker)
+        for port in PG_PORT:
+            try:
+                engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{port}/{PG_DB}"
+                engine = create_engine(engine_url, echo=True)
+
+                # Test connection, if fail the exception will move on to the next port
+                # If success, use this engine
+                engine.connect()
+                break
+            except Exception as e:
+                logger.error(f"An error occurred when connecting to the database at port {port}. \n " + str(e))
+                continue
+
         with Session(engine) as session:
             # Now let's grab stuff from the table
             result = select(DataTable)
@@ -83,12 +105,12 @@ def retrieve_from_database():
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when retrieving data from the database. \n " + str(e))
-        return "An error occured when retrieving data from the database."
+        logger.error("An error occurred when retrieving data from the database. \n " + str(e))
+        return "An error occurred when retrieving data from the database."
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
-        return "An error occured when connecting to the database."
+        logger.error("An error occurred when connecting to the database. \n " + str(e))
+        return "An error occurred when connecting to the database."
 
 # Test saving data into database
 def save_into_database(data):
@@ -99,15 +121,26 @@ def save_into_database(data):
     try:
         # Connect to the database
         encoded_password = urllib.parse.quote_plus(PG_PASSWORD)
-        engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-        engine = create_engine(engine_url, echo=True)
+        
+        # Code will choose between two different ports:
+        # PG_PORT (for local runs) and 5432 (when running in Docker)
+        for port in PG_PORT:
+            try:
+                engine_url = f"postgresql://{PG_USER}:{encoded_password}@{PG_HOST}:{port}/{PG_DB}"
+                engine = create_engine(engine_url, echo=True)
+
+                # Test connection, if fail the exception will move on to the next port
+                # If success, use this engine
+                engine.connect()
+                break
+            except Exception as e:
+                logger.error(f"An error occurred when connecting to the database at port {port}. \n " + str(e))
+                continue
 
         # Create the table if not created yet
         Base.metadata.create_all(engine)
 
         # Start a session
-        session = Session(engine)
-
         with Session(engine) as session:
             entity_counter = 1
 
@@ -125,10 +158,10 @@ def save_into_database(data):
 
     # Exceptions
     except SQLAlchemyError as e:
-        print("An error occured when saving to the database. \n " + str(e))
+        logger.error("An error occurred when saving to the database. \n " + str(e))
 
     except Exception as e:
-        print("An error occured when connecting to the database. \n " + str(e))
+        logger.error("An error occurred when connecting to the database. \n " + str(e))
 
 # Test function that saves real City of St. Louis data (ARPA funds) to the database
 # and then retrieves from the database
