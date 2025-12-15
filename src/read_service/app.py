@@ -487,69 +487,6 @@ def query_stub():
     """
     return jsonify({"message": "This is a query stub endpoint"})    
 
-@app.route('/api/crime', methods=['GET'])
-def get_crime_data():
-    """
-    Retrieve active crime data from the `stlouis_gov_crime` table using SQLAlchemy ORM.
-
-    Query Parameters:
-      - page (int): Page number (default=1)
-      - page_size (int): Results per page (default=50)
-
-    Returns:
-      Paginated JSON list of crime records.
-    """
-    try:
-        # Validate pagination parameters
-        page = int(request.args.get("page", 1))
-        page_size = int(request.args.get("page_size", 50))
-        if page < 1 or page_size < 1:
-            raise ValueError("Page and page_size must be positive integers")
-    except ValueError:
-        return jsonify({"error": "Invalid pagination parameters"}), 400
-
-    offset = (page - 1) * page_size
-
-    db = SessionLocal()
-    try:
-        # Count total active records
-        total = db.query(func.count()).select_from(StLouisCrimeStats)\
-                  .filter(StLouisCrimeStats.is_active.is_(True))\
-                  .scalar()
-
-        # Fetch paginated active crime records
-        rows = db.query(StLouisCrimeStats)\
-                 .filter(StLouisCrimeStats.is_active.is_(True))\
-                 .order_by(StLouisCrimeStats.data_posted_on.desc())\
-                 .limit(page_size)\
-                 .offset(offset)\
-                 .all()
-
-        # Convert ORM objects to dict
-        crimes = []
-        for r in rows:
-            crimes.append({
-                "id": r.id,
-                "created_on": r.created_on.isoformat(),
-                "data_posted_on": r.data_posted_on.isoformat() if r.data_posted_on else None,
-                "is_active": r.is_active,
-                "raw_json": r.raw_json
-            })
-
-        return jsonify({
-            "page": page,
-            "page_size": page_size,
-            "total": total,
-            "total_pages": (total + page_size - 1) // page_size,
-            "crimes": crimes
-        })
-
-    except Exception as e:
-        app.logger.error(f"Crime query failed: {e}")
-        return jsonify({"error": "Failed to query crime data"}), 500
-    finally:
-        db.close()
-
 # Error handler for 404
 @app.errorhandler(404)
 def not_found(error):

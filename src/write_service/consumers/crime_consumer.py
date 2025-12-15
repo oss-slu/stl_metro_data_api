@@ -21,19 +21,12 @@ def is_docker_host(hostname="postgres", port=5432, timeout=1):
         return False
 
 # Postgres config
-if is_docker_host():
-    PG_HOST = "postgres"
-    PG_PORT = 5432
-else:
-    PG_HOST = os.getenv("PG_HOST", "localhost")
-    PG_PORT = int(os.getenv("PG_PORT", 5433))
-
-PG_DB = os.getenv("PG_DB", "stl_data")
-PG_USER = os.getenv("PG_USER", "postgres")
-PG_PASSWORD = os.getenv("PG_PASSWORD", "Welcome123456")
-
-# Kafka config
-KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
+PG_HOST = os.getenv('PG_HOST', 'localhost')
+PG_PORT = os.getenv('PG_PORT', '5433')
+PG_DB = os.getenv('PG_DB', 'stl_data')
+PG_USER = os.getenv('PG_USER', 'postgres')
+PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
 RAW_TOPIC = os.getenv("RAW_TOPIC", "raw-data-topic")
 
 print(f"Connecting to Postgres at {PG_HOST}:{PG_PORT} db={PG_DB} user={PG_USER}")

@@ -1,5 +1,4 @@
 version: '3.10'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -10,12 +9,10 @@ services:
       - "2181:2181"
     networks:
       - kafka-net
-
+  
   kafka:
     image: confluentinc/cp-kafka:7.4.0
-    depends_on:
-      zookeeper:
-        condition: service_started
+    depends_on: [ zookeeper ]
     ports:
       - "9092:9092"
     environment:
@@ -27,36 +24,35 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - kafka-net
-
+    
   kafka-init:
     image: confluentinc/cp-kafka:7.6.0
     depends_on:
-      kafka:
-        condition: service_started
-    entrypoint: ["/bin/bash", "-c"]
+      - kafka
+    entrypoint: [ "/bin/bash", "-c" ]
     command: |
-      echo "Waiting for Kafka...";
+      "
+      echo 'Waiting for Kafka to be ready...';
       sleep 10;
-      echo "Creating topics: $RAW_TOPIC and $PROCESSED_TOPIC";
-      for topic in $RAW_TOPIC $PROCESSED_TOPIC; do
+      echo 'Creating topics: $raw-data-topic, $processed-data-topic';
+      for topic in $(echo $raw-data-topic, $processed-data-topic' | tr ',' '\n'); do
         kafka-topics --create \
-          --bootstrap-server kafka:9092 \
+          --bootstrap-server kafka:$9092 \
           --replication-factor 1 \
           --partitions 3 \
-          --topic "$topic" || true;
+          --topic $topic || true;
       done
+      "
     networks:
       - kafka-net
-
+  
   postgres:
     image: postgres:14
     container_name: stl_postgres
     restart: always
-    env_file:
-      - ../.env
     environment:
-      POSTGRES_DB: ${PG_DB}
-      POSTGRES_USER: ${PG_USER}
+      POSTGRES_DB: stl_data
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${PG_PASSWORD}
     ports:
       - "${PG_PORT}:5432"
@@ -65,12 +61,7 @@ services:
       - ../config/pg_init.sql:/docker-entrypoint-initdb.d/pg_init.sql
     networks:
       - kafka-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
+      
   write_service:
     build:
       context: ../
@@ -79,22 +70,6 @@ services:
       - ../.env
     ports:
       - "5000:5000"
-    environment:
-      PG_HOST: postgres
-      PG_PORT: 5432
-      PG_DB: ${PG_DB}
-      PG_USER: ${PG_USER}
-      PG_PASSWORD: ${PG_PASSWORD}
-      DATABASE_URL: "postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}"
-      KAFKA_BROKER: "kafka:9092"
-      RAW_TOPIC: ${RAW_TOPIC}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-    networks:
-      - kafka-net
 
   read_service:
     build:
@@ -104,20 +79,24 @@ services:
       - ../.env
     ports:
       - "5001:5001"
+
+  pdf_consumer:
+    build:
+      context: ../
+      dockerfile: docker/write_service/Dockerfile
+    command: ["python", "-m", "src.write_service.consumers.processed_consumer"]
+    depends_on:
+      - kafka
+      - postgres
     environment:
       PG_HOST: postgres
-      PG_PORT: 5432
-      PG_DB: ${PG_DB}
-      PG_USER: ${PG_USER}
+      PG_PORT: ${PG_PORT}
+      PG_DB: stl_data
+      PG_USER: postgres
       PG_PASSWORD: ${PG_PASSWORD}
-      DATABASE_URL: "postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}"
+      DATABASE_URL: "postgresql+psycopg2://postgres:${PG_PASSWORD}@postgres:${PG_PORT}/${PG_DB}"
       KAFKA_BROKER: "kafka:9092"
-      RAW_TOPIC: ${RAW_TOPIC}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
+      PROCESSED_TOPIC: "processed-data-topic"
     networks:
       - kafka-net
 
@@ -130,7 +109,7 @@ services:
       - ../.env
     environment:
       PG_HOST: postgres
-      PG_PORT: 5432
+      PG_PORT: "5432"
       PG_DB: ${PG_DB}
       PG_USER: ${PG_USER}
       PG_PASSWORD: ${PG_PASSWORD}
@@ -139,10 +118,8 @@ services:
       RAW_TOPIC: ${RAW_TOPIC}
       CRIME_CSV: "/data/crime_data.csv"
     depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
+      - postgres
+      - kafka
     networks:
       - kafka-net
     volumes:
