@@ -83,7 +83,7 @@ PG_HOST=localhost
 PG_PORT=5433
 PG_DB=stl_data
 PG_USER=postgres
-PG_PASSWORD=example_pass
+PG_PASSWORD="Welcome@123456"
 PYTHONPATH=src
 
 #Kafka
@@ -144,19 +144,13 @@ python tests/basic_test.py
 Test the Flask skeleton for the write-side microservice.
 
 - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
-- Open a browser and go to `http://localhost:5000/`. A webpage should appear.
-- Stop the server: `Ctrl+C`.
+- Open a browser and go to http://localhost:5000/. A webpage should appear.
 
 Test the Flask skeleton for the read-side microservice.
 
-```bash
-cd src/read_service
-python app.py
-```
-
-- Open a browser or use `curl`: `curl http://localhost:5001/swagger`.
-- Expected output: Swagger opened in browser.
-- Stop the server: `Ctrl+C`.
+- The read-service app along with the front-end (excellence project) should also automatically start with Docker. To run the read-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
+- Open a browser and go to http://localhost:5001/.
+- Or use `curl`: `curl http://localhost:5001/swagger`. Expected output: Swagger opened in browser.
 
 ### 9. Run Tests
 
@@ -171,11 +165,30 @@ pytest tests/
 - If tests fail, check error messages and ensure Docker services are up.
 
 ### 10. Secondary Front-end (Excellence Project)
-To run the secondary front-end (excellence project):
-   - Go to the `frontend` folder in your terminal.
-   - Run `python -m http.server 9000`
-   - Go to `http://localhost:9000` in your web browser.
-   
+The front-end (excellence project) should automatically start with Docker.
+   - To view the secondary front-end, go to http://localhost:5001/index.htm in your web browser.
+
+## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
+Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
+is saved into the database:
+1. Start up the project's Docker containers.
+2. Do one of the following:
+   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   You should see a webpage displaying what was saved 
+   in the database along with the Kafka status. The PostgreSQL 
+   application, if connected properly to the project, should also display the table data.
+
+   - OR run `python -m src.write_service.consumers.json_consumer` from the project's root folder. 
+   The ARPA data will be saved into the database. The terminal should display what was 
+   received from Kafka and what was inserted into the database. The PostgreSQL application, 
+   if connected properly to the project, should also display the table data.
+
+Once ARPA data is in the database, you can see the data in three ways:
+1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
+2. Go to http://localhost:5001/swagger to see the Swagger U.I..
+3. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
+
 ## Development Workflow
 
 - **Branching**: Create feature branches from `develop` (e.g., `git checkout develop && git checkout -b feature/sprint1-dev1-kafka-setup`).

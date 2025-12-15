@@ -75,15 +75,34 @@ stl_metro_dat_api/
 
 1. Start containers: `docker-compose --env-file .env -f docker/docker-compose.yml up -d`.
    - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
-2. Run read-side microservice: `cd src/read_service && python app.py`.
+   - The read-service app along with the front-end (excellence project) should also automatically start with Docker. To run the read-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
 3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
-5. To run the secondary front-end (excellence project):
-   - Go to the `frontend` folder in your terminal.
-   - Run `python -m http.server 9000`
-   - Go to `http://localhost:9000` in your web browser.
+5. The front-end (excellence project) should automatically start with Docker.
+   - To view the secondary front-end, go to `http://localhost:5001/index.htm` in your web browser.
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
+
+## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
+Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
+is saved into the database:
+1. Start up the project's Docker containers.
+2. Do one of the following:
+   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   You should see a webpage displaying what was saved 
+   in the database along with the Kafka status. The PostgreSQL 
+   application, if connected properly to the project, should also display the table data.
+
+   - OR run `python -m src.write_service.consumers.json_consumer` from the project's root folder. 
+   The ARPA data will be saved into the database. The terminal should display what was 
+   received from Kafka and what was inserted into the database. The PostgreSQL application, 
+   if connected properly to the project, should also display the table data.
+
+Once ARPA data is in the database, you can see the data in three ways:
+1. Go to http://localhost:5001/api/arpa to see the ARPA endpoint.
+2. Go to http://localhost:5001/swagger to see the Swagger U.I..
+3. Go to http://localhost:5001/arpa.htm to see the ARPA frontend table U.I. (excellence project)
 
 ## Getting Started with Contributions
 
@@ -107,6 +126,24 @@ The STL Metro Data API uses CQRS architecture to separate data collection (write
 - Write Service: Data ingestion and processing
 - Kafka: Event streaming and message queue
 - Read Service: PostgreSQL database and Flask API
+
+## 🔐 Security & Threat Model
+
+The STL Metro Data API includes a detailed **Threat Model** that documents the system’s security assumptions, identified risks, and recommended mitigations.  
+This resource helps contributors, maintainers, and future teams understand the project’s security posture and how it may evolve.
+
+**View the full Threat Model:**  
+**[docs/threat_model.md](docs/threat_model.md)**
+
+**Key Notes:**
+
+- The project is designed for **local development environments only**.  
+- API services currently include **no authentication**.  
+- Kafka and PostgreSQL should **not** be exposed publicly without additional hardening.  
+- Contributors making architectural or security-related changes should review the Threat Model before submitting PRs.
+
+For questions regarding security considerations, please reach out to the project’s Tech Lead.
+
 
 ## Code of Conduct
 

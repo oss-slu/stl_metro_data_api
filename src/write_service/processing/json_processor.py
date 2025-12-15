@@ -2,12 +2,31 @@
 json_processor.py
 This code takes the raw JSON data, turns it into a list of dictionaries, and sends it into Kafka.
 The functions in this file are used in other parts of the project.
+
+Here is how you run my JSON fetcher, JSON processer, and JSON consumer.
+This is also how ARPA data from the City of St. Louis Open Data Portal
+is saved into the database:
+    1. Start up the project's Docker containers.
+    2. Do one of the following:
+        - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+        You should see a webpage displaying what was saved 
+        in the database along with the Kafka status. The PostgreSQL 
+        application, if connected properly to the project, should also display the table data.
+
+        - OR run python -m src.write_service.consumers.json_consumer from the project's root folder. 
+        The ARPA data will be saved into the database. The terminal should display what was 
+        received from Kafka and what was inserted into the database. The PostgreSQL application, 
+        if connected properly to the project, should also display the table data.
 """
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import json, time
 from jsonschema import validate, ValidationError
 import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ensure it is a list of dictionaries (array=list, object=dictionary)
 schema = {
@@ -51,14 +70,14 @@ def send_data(raw_data, topic_name):
 
     # No data received
     if not data:
-        logging.error("No data to send!")
+        logger.error("No data to send!")
         return "No data to send to Kafka!"
 
     # Make sure data in right format (schema)
     try:
         validate(instance=data, schema=schema)
     except ValidationError as error:
-        logging.error("Failed to send to Kafka. Data is not in valid format!\n" + str(error.message))
+        logger.error("Failed to send to Kafka. Data is not in valid format!\n" + str(error.message))
         return "Failed to send to Kafka. Data is not in valid format! <br> Error: <br>" + str(error.message)
 
     # Send to Kafka (we will try 3 times just in case Kafka isn't available yet)
@@ -78,18 +97,18 @@ def send_data(raw_data, topic_name):
             for entry in data:
                 producer.send(topic_name, entry)
                 producer.flush()
-                logging.info("Sent JSON data to Kafka: " + str(entry))
+                logger.info("Sent JSON data to Kafka: " + str(entry))
 
             return "Sent data to Kafka successfully!<br>" + "Topic: " + topic_name
         except NoBrokersAvailable:
             # Kafka may not be available yet, let's try again
-            logging.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
+            logger.error(f"Kafka producer attempt {attempt+1} failed (NoBrokersAvailable), retrying in 5s...")
             time.sleep(5)
 
         except Exception as error:
             # Something else went wrong when sending to Kafka!
-            logging.error("Failed to send to Kafka!\n", str(error))
+            logger.error("Failed to send to Kafka!\n", str(error))
             return "Failed to send data to Kafka! <br> Error: " + str(error)
     
-        logging.error("Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page.")
+        logger.error("Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page.")
         return "Failed to connect to Kafka after 3 attempts. Ensure that Kafka is running and accessible! Or maybe Kafka hasn't finished loading yet. Wait like 60 seconds and then refresh the page."
