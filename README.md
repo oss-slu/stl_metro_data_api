@@ -106,7 +106,7 @@ Once ARPA data is in the database, you can see the data in three ways:
 
 ## Getting Started with Contributions
 
-Thank you so much for wanting to contribute to our project! Please see the [Contribution Guide](/docs/CONTRIBUTOR_JOURNEY_MAP.md) on how you can help.
+Thank you so much for wanting to contribute to our project! Please see the [Contribution Guide](/docs/CONTRIBUTING.md) on how you can help.
 
 ## Testing
 
@@ -127,7 +127,7 @@ The STL Metro Data API uses CQRS architecture to separate data collection (write
 - Kafka: Event streaming and message queue
 - Read Service: PostgreSQL database and Flask API
 
-## 🔐 Security & Threat Model
+## Security & Threat Model
 
 The STL Metro Data API includes a detailed **Threat Model** that documents the system’s security assumptions, identified risks, and recommended mitigations.  
 This resource helps contributors, maintainers, and future teams understand the project’s security posture and how it may evolve.
