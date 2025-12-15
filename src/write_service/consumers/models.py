@@ -3,7 +3,7 @@
 Database models for storing web-scraped data.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, JSON, create_engine
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timezone
@@ -98,6 +98,25 @@ def get_db_engine():  # create database engine from .env config
         logger.warning("Failed to create tables during engine init: %s", e)
 
     return engine
+
+class StLouisCrimeStats(Base):
+    """
+    for NIBRS Crime Files sourced from https://slmpd.org/stats/
+    Columns:
+        id (PK)
+        created_on      - record created timestamp
+        data_posted_on  - timestamp from source
+        is_active       - only active records should be returned
+        raw_json        - JSON of original record
+    """
+    __tablename__ = "stlouis_gov_crime"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_on = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    data_posted_on = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    raw_json = Column(JSON, nullable=False)
+
 
 def create_tables(engine): # create all tables if they don't exist"
     Base.metadata.create_all(engine)
