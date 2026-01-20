@@ -4,7 +4,7 @@
 
 **Overview**
 
-The STL Data API project is a centralized, user-friendly platform designed to serve as a proxy for accessing and interacting with public data from various regional and municipal sources, with a focus on the St. Louis region. The project addresses challenges such as inconsistent data formats, lack of standardization, and repetitive efforts in compiling datasets by providing a RESTful API and a foundation for a future web portal. It is built using a CQRS (Command Query Responsibility Segregation) architecture with microservices, leveraging modern technologies for scalability and maintainability.
+The STL Data API project is a centralized, user-friendly platform designed to serve as an all-in-one place for accessing and interacting with public data about the St. Louis region. The goal is to make data about the City of St. Louis very easy to use and access for both developers and the general public. The project addresses challenges such as inconsistent data formats, lack of standardization, and repetitive efforts in compiling datasets by providing a RESTful API and a foundation for a future web portal. It is built using a CQRS (Command Query Responsibility Segregation) architecture with microservices, leveraging modern technologies for scalability and maintainability.
 
 **Technical Overview**
 
@@ -17,8 +17,9 @@ The STL Data API project is a centralized, user-friendly platform designed to se
 2. Raw Data Processing: Clean and transform raw data in memory, then send to Kafka for queuing.
 3. Data Storage: Consume processed data from Kafka, store in PostgreSQL (snapshots, historic puts, aggregations), and delete raw data from memory.
 4. Event Processing: Optimize short-term reads via event processors in the query-side microservice.
-5. API Access: Expose RESTful endpoints (via Flask) for querying data, with Open API documentation.
-6. Future Features: Add user subscriptions, web portal, and advanced optimizations.
+5. API Access: Expose RESTful endpoints (via Flask) for querying data, with Open API documentation using Swagger.
+6. Frontend U.I.: Create a frontend U.I. that will make it easy for developers and the general public to use this data.
+7. Future Features: Add user subscriptions, web portal, and advanced optimizations.
 
 Architecture overview diagram here: [Architecture](/docs/architecture_overview.png)
 
@@ -29,7 +30,7 @@ Architecture overview diagram here: [Architecture](/docs/architecture_overview.p
 - Kafka: Message broker for scalable, write-optimized data queuing (containerized).
 - PostgreSQL: Database for storing processed data (containerized).
 - Docker: Containerization for Kafka, PostgreSQL, and microservices.
-- Open API (Swagger): API documentation for endpoints.
+- Open API (Swagger): API documentation and U.I. for endpoints.
 - SQLAlchemy: ORM for PostgreSQL interactions.
 
 **Getting Started**
@@ -59,12 +60,12 @@ Detailed setup is in [setup.md](./setup.md). Summary:
 ```
 stl_metro_dat_api/
 ├── src/                  # Python source code
-│   ├── write_service/    # CQRS Command side (data ingestion/processing)
-│   └── read_service/     # CQRS Query side (event processors/API)
+│   ├── write_service/    # CQRS Command side (data ingestion/processing/consumers)
+│   └── read_service/     # CQRS Query side (event processors/API/frontend/Swagger)
 ├── docker/               # Dockerfiles and Docker Compose configs
 ├── config/               # Kafka/PostgreSQL configurations
 ├── tests/                # Unit and integration tests
-├── docs/                 # Open API (Swagger) specifications
+├── docs/                 # Project guides and documentation
 ├── requirements.txt      # Python dependencies
 ├── .env.example          # Template for environment variables
 ├── setup.md              # Detailed setup guide
@@ -79,12 +80,12 @@ stl_metro_dat_api/
 3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
 5. The front-end (excellence project) should automatically start with Docker.
-   - To view the secondary front-end, go to `http://localhost:5001/index.htm` in your web browser.
+   - To view the front-end, go to `http://localhost:5001/index.htm` in your web browser.
 
 **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
 
 ## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
-Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+Here is how you run the JSON fetcher, JSON processer, and JSON consumer.
 This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
 is saved into the database:
 1. Start up the project's Docker containers.

@@ -166,10 +166,10 @@ pytest tests/
 
 ### 10. Secondary Front-end (Excellence Project)
 The front-end (excellence project) should automatically start with Docker.
-   - To view the secondary front-end, go to http://localhost:5001/index.htm in your web browser.
+   - To view the front-end, go to http://localhost:5001/index.htm in your web browser.
 
 ## How to run the JSON fetcher, processor, and consumer (how to insert ARPA funds into database)
-Here is how you the JSON fetcher, JSON processer, and JSON consumer.
+Here is how you run the JSON fetcher, JSON processer, and JSON consumer.
 This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis Open Data Portal
 is saved into the database:
 1. Start up the project's Docker containers.

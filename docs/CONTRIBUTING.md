@@ -54,9 +54,11 @@ For detailed instructions on how to get the code on your device running and what
 
 - The basic outline of our project is as follows:
     - `src`: Contains the `read_service` and `write_service` modules which contains code on retrieving, parsing, saving, and processing data. These modules are written in Python Flask.
-    - The `write_service` has two submodules:
-        - `processing` for the cleaning and saving of the data
-        - `ingestion` for the retrieval of the data
+        - The `write_service` has three submodules:
+            1. `ingestion` for the retrieval of the data
+            2. `processing` for the cleaning of the retrieved data and sending it to Kafka
+            3. `consumers` for retrieving the data from Kafka and then saving it to the PostgreSQL database.
+      - The `read_service` has one submodule `processor` that retrieves the data from the database and returns it. The read service also runs Swagger and the frontend.
     - `docker` contains all Docker configuration files. Ensure that your new code works in Docker.
     - `docs` contains all documentation files.
     - `tests` contains all tests to ensure the code runs properly. All of the tests except for the `basic_test.py` file is made for `pytest`.
