@@ -48,7 +48,7 @@ PG_HOST = os.getenv('PG_HOST', 'localhost')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
+PG_PASSWORD = os.getenv('PG_PASSWORD', "123456")
 
 # Optional: default table/site if messages don't carry routing metadata
 DEFAULT_TABLE = os.getenv("SITE_NAME")  # e.g., "stlouis_gov_crime"

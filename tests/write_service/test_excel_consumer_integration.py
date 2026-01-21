@@ -44,10 +44,10 @@ def test_end_to_end_kafka_to_postgres(tmp_path):
     # ---------- Postgres connection (matches docker-compose.test.yml) ----------
     KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'localhost:9092')
     PG_HOST = os.getenv('PG_HOST', 'localhost')
-    PG_PORT = os.getenv('PG_PORT', '5433')
+    PG_PORT = os.getenv('PG_PORT', '5432')
     PG_DB = os.getenv('PG_DB', 'stl_data')
     PG_USER = os.getenv('PG_USER', 'postgres')
-    PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")  # your local test password
+    PG_PASSWORD = os.getenv('PG_PASSWORD', "123456")  # your local test password
 
     # URL-encoded password for SQLAlchemy DSN used inside the consumer
     encoded_password = urllib.parse.quote_plus(PG_PASSWORD)

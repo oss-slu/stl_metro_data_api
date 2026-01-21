@@ -19,8 +19,8 @@ jobs:
 
     env:
       # Host-level ports exposed by docker-compose on the runner
-      # Host Postgres port (mapped from service pg 5432). Adjust if you prefer 5433.
-      PG_PORT: "5433"
+      # Host Postgres port (mapped from service pg 5432). Adjust if you prefer 5432.
+      PG_PORT: "5432"
       PG_HOST: "localhost"
       PG_DB: "stl_data"
       PG_USER: "postgres"
@@ -70,7 +70,7 @@ jobs:
           import time, os, sys
           import psycopg2
           host = os.environ.get("PG_HOST", "localhost")
-          port = int(os.environ.get("PG_PORT", "5433"))
+          port = int(os.environ.get("PG_PORT", "5432"))
           user = os.environ.get("PG_USER", "postgres")
           password = os.environ.get("PG_PASSWORD", "")
           db = os.environ.get("PG_DB", "stl_data")

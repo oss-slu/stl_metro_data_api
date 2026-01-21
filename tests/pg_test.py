@@ -21,9 +21,9 @@ except ImportError:
 
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', 'Welcome@123456')
+PG_PASSWORD = os.getenv('PG_PASSWORD', '123456')
 PG_HOST = os.getenv('PG_HOST', 'localhost')
-PG_PORT = os.getenv('PG_PORT', '5433')
+PG_PORT = os.getenv('PG_PORT', '5432')
 
 
 def get_conn():

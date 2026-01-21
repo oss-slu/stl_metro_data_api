@@ -10,11 +10,7 @@ Before starting, ensure you have the following installed on your system:
   - Verify: `python --version` (should output 3.13 or higher).
 - **Docker Desktop**: Install from [docker.com](https://www.docker.com/products/docker-desktop/) (includes Docker Compose).
   - Verify: `docker --version` and `docker-compose --version`.
-- **psql Client**: For PostgreSQL interaction.
-  - Mac: `brew install postgresql`
-  - Windows: Install via [PostgreSQL installer](https://www.postgresql.org/download/windows/) or WSL.
-  - Linux: `sudo apt-get install postgresql-client`
-  - Verify: `psql --version`.
+- **pgAdmin 4**: Recommended GUI for viewing data. Install via `brew install --cask pgadmin4` (Mac) or from [pgadmin.org](https://www.pgadmin.org/).
 - **Git**: For repository cloning.
   - Verify: `git --version`.
 - **VS Code**: Recommended IDE with extensions:
@@ -80,13 +76,13 @@ Edit `.env` with a text editor (e.g., VS Code). Example content:
 ```env
 KAFKA_BROKER=localhost:9092
 PG_HOST=localhost
-PG_PORT=5433
+PG_PORT=5432
 PG_DB=stl_data
 PG_USER=postgres
-PG_PASSWORD="Welcome@123456"
+PG_PASSWORD=123456
 PYTHONPATH=src
 
-#Kafka
+# Kafka Configuration
 KAFKA_BROKER_ID=1
 KAFKA_BROKER_HOST=kafka
 KAFKA_BROKER_PORT=9092
@@ -102,17 +98,7 @@ PROCESSED_DATA_TOPIC=processed-data-topic
 - **Note**: Use a secure `PG_PASSWORD` for local development. Do not commit `.env` to Git (it’s ignored via `.gitignore`).
 - These variables configure connections to Kafka and PostgreSQL containers.
 
-### 5. Setup PostgreSQL Server
-
-Register a new server in PostgreSQL pgAdmin 4 with port number 5433
-
-- Name: Docker STL API
-- Host name/address: localhost
-- Port: 5433
-- Maintenance database: stl_data
-- Username: postgres
-
-### 6. Start Docker Containers
+### 5. Start Docker Containers
 
 Use Docker Compose to spin up Kafka (with Zookeeper) and PostgreSQL containers.
 
@@ -121,10 +107,20 @@ docker-compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 
 - Verify containers are running: `docker ps` (should list `zookeeper`, `kafka`, and `postgres`).
-- **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose -f docker/docker-compose.yml build`
+- **Important!** If you make changes to your code, you must update your Docker Containers so Docker can get the newest version of your code. To do this, run: `docker-compose --env-file .env -f docker/docker-compose.yml build`
 - To stop: `docker-compose -f docker/docker-compose.yml down`.
-  - If not initialized correctly, remove volumes when taking down containers: `docker-compose -f docker/docker-compose.yml down -v`
+  - If not initialized correctly, remove volumes when taking down containers: `docker-compose --env-file .env -f docker/docker-compose.yml down -v` or `docker-compose --env-file .env -f docker/docker-compose.yml up -d --build`
 - If issues occur (e.g., port conflicts), check logs: `docker logs <container_name>`.
+
+### 6. Verify Database in pgAdmin 4
+
+Register your Docker database to see the data:
+
+- Host name/address: localhost
+- Port: 5432
+- Maintenance database: stl_data
+- Username: postgres
+- Password: 123456
 
 ### 7. Verify Connectivity
 
@@ -144,7 +140,7 @@ python tests/basic_test.py
 Test the Flask skeleton for the write-side microservice.
 
 - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
-- Open a browser and go to http://localhost:5000/. A webpage should appear.
+- Open a browser and go to http://localhost:5005/. A webpage should appear.
 
 Test the Flask skeleton for the read-side microservice.
 
@@ -174,7 +170,7 @@ This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis
 is saved into the database:
 1. Start up the project's Docker containers.
 2. Do one of the following:
-   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   - Go to http://localhost:5005/json. The ARPA data will be saved into the database.
    You should see a webpage displaying what was saved 
    in the database along with the Kafka status. The PostgreSQL 
    application, if connected properly to the project, should also display the table data.

@@ -5,8 +5,8 @@ FROM python:3.13-slim
 COPY src/ src/
 COPY requirements.txt .
 
-# I will use port 5000
-EXPOSE 5000
+# I will use port 5005
+EXPOSE 5005
 
 # Install required Python libraries and then start the app
 RUN pip install --no-cache-dir -r requirements.txt

@@ -40,11 +40,11 @@ PG_HOST = os.getenv('PG_HOST', 'localhost') + ',postgres'
 
 # Code will choose between two different ports:
 # PG_PORT (for local runs) and 5432 (when running in Docker)
-PG_PORT = [os.getenv('PG_PORT', '5433'), '5432']
+PG_PORT = [os.getenv('PG_PORT', '5432'), '5432']
 
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
+PG_PASSWORD = os.getenv('PG_PASSWORD', "123456") # update with pg password if needed
 
 # SQL Alchemy requires this base class thing
 class Base(DeclarativeBase):
