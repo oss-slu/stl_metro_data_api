@@ -87,7 +87,7 @@ def retrieve_from_database():
                 continue
 
         with Session(engine) as session:
-            stmt = select(DataTable).where(DataTable.is_active == True)
+            stmt = select(DataTable).where(DataTable.is_active)
             
             # Use session.execute for potentially faster data access if you have thousands of rows
             results = session.scalars(stmt).all()
