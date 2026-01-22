@@ -87,15 +87,22 @@ def retrieve_from_database():
                 continue
 
         with Session(engine) as session:
-            # Now let's grab stuff from the table
-            result = select(DataTable)
+            stmt = select(DataTable).where(DataTable.is_active == True)
             
-            for entity in session.scalars(result):
-                # Only add active data
-                if (entity.is_active):
-                    data.append({"id": entity.id, "name": entity.name, 
-                                "content": entity.content, "data_posted_on": entity.data_posted_on,
-                                "is_active": entity.is_active})
+            # Use session.execute for potentially faster data access if you have thousands of rows
+            results = session.scalars(stmt).all()
+
+            # Using list comprehension for faster object-to-dict conversion
+            data = [
+                {
+                    "id": row.id, 
+                    "name": row.name, 
+                    "content": row.content, 
+                    "data_posted_on": row.data_posted_on,
+                    "is_active": row.is_active
+                } 
+                for row in results
+            ]
 
         # We are done!
         engine.dispose()
