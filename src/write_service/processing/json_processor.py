@@ -8,7 +8,7 @@ This is also how ARPA data from the City of St. Louis Open Data Portal
 is saved into the database:
     1. Start up the project's Docker containers.
     2. Do one of the following:
-        - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+        - Go to http://localhost:5005/json. The ARPA data will be saved into the database.
         You should see a webpage displaying what was saved 
         in the database along with the Kafka status. The PostgreSQL 
         application, if connected properly to the project, should also display the table data.

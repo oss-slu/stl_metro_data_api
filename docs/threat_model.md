@@ -57,7 +57,7 @@ The system architecture consists of the following components:
 - Zookeeper (Confluent)  
 - Kafka Broker (Confluent)  
 - PostgreSQL 14 (`stl_data` database)  
-- `write_service` (Flask microservice, port `5000`)  
+- `write_service` (Flask microservice, port `5005`)  
 - `read_service` (Flask microservice, port `5001`)  
 - `pdf_consumer` (Kafka consumer -> PostgreSQL writer)  
 - Optional `frontend` served locally at port `9000`  
@@ -129,7 +129,7 @@ Active service endpoints include:
 
 | Component      | Entry Type | Endpoint                                                |
 |----------------|-----------|---------------------------------------------------------|
-| `write_service` | HTTP      | `http://localhost:5000/`                                |
+| `write_service` | HTTP      | `http://localhost:5005/`                                |
 | `read_service`  | HTTP      | `http://localhost:5001/` (Swagger: `http://localhost:5001/swagger`) |
 | `frontend`      | HTTP      | `http://localhost:9000/`                                |
 | `kafka`         | TCP       | `localhost:9092`                                        |

@@ -19,7 +19,7 @@ PG_HOST = os.getenv('PG_HOST', 'postgres')
 PG_PORT = os.getenv('PG_PORT', '5432')
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456")
+PG_PASSWORD = os.getenv('PG_PASSWORD', "123456")
 
 class StLouisCensusData(Base):
     """

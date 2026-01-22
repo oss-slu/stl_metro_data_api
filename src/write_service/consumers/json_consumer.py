@@ -7,7 +7,7 @@ This is also how ARPA data from the City of St. Louis Open Data Portal
 is saved into the database:
     1. Start up the project's Docker containers.
     2. Do one of the following:
-        - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+        - Go to http://localhost:5005/json. The ARPA data will be saved into the database.
         You should see a webpage displaying what was saved 
         in the database along with the Kafka status. The PostgreSQL 
         application, if connected properly to the project, should also display the table data.
@@ -50,11 +50,11 @@ PG_HOST = os.getenv('PG_HOST', 'localhost') + ',postgres'
 
 # Code will choose between two different ports:
 # PG_PORT (for local runs) and 5432 (when running in Docker)
-PG_PORT = [os.getenv('PG_PORT', '5433'), '5432']
+PG_PORT = [os.getenv('PG_PORT', '5432'), '5432']
 
 PG_DB = os.getenv('PG_DB', 'stl_data')
 PG_USER = os.getenv('PG_USER', 'postgres')
-PG_PASSWORD = os.getenv('PG_PASSWORD', "Welcome@123456") # update with pg password if needed
+PG_PASSWORD = os.getenv('PG_PASSWORD', "123456") # update with pg password if needed
 
 # SQL Alchemy requires this base class thing
 class Base(DeclarativeBase):
@@ -91,7 +91,7 @@ def retrieve_from_kafka(topic_name):
                     bootstrap_servers=['localhost:9092', 'kafka:29092'],
                     value_deserializer=lambda m: json.loads(m.decode("utf-8")),
                     auto_offset_reset='earliest',
-                    consumer_timeout_ms=5000 
+                    consumer_timeout_ms=5005 
                 )
                 
                 # Get all messages

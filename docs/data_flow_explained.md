@@ -39,7 +39,7 @@ If the referenced tables (routes, events) do not exist, these endpoints will ret
 ## Docker-based orchestration
 One Postgres container defined in docker-compose.yml  
 Kafka, Zookeeper, write_service, and read_service are expected  
-.env uses 127.0.0.1:5433, meaning Flask apps connect to Postgres through a host-mapped port  
+.env uses 127.0.0.1:5432, meaning Flask apps connect to Postgres through a host-mapped port  
 If the Flask services run inside Docker, PG_HOST must be set to the Docker service name (e.g., postgres) and PG_PORT to 5432  
 
 For now, the system runs with local Flask services pointed at host-mapped Postgres.

@@ -39,7 +39,7 @@ Architecture overview diagram here: [Architecture](/docs/architecture_overview.p
 
 - Python 3.10+: Install via python.org or pyenv.
 - Docker Desktop: Install from docker.com (includes Docker Compose).
-- psql Client: For PostgreSQL interaction (e.g., brew install postgresql on Mac).
+- pgAdmin 4: Recommended GUI
 - Git: For cloning the repository.
 - VS Code: Recommended IDE with extensions (Python, Docker).
 
@@ -51,9 +51,8 @@ Detailed setup is in [setup.md](./setup.md). Summary:
 2. Create and activate a virtual environment: `python -m venv venv && source venv/bin/activate` (Windows: `venv\Scripts\activate`).
 3. Install dependencies: `pip install -r requirements.txt`.
 4. Copy `.env.example` to `.env`: `cp .env.example .env` and update variables (e.g., `PG_PASSWORD`).
-5. Register a new server in PostgreSQL pgAdmin 4 with port number `5433`
-6. Start Kafka and PostgreSQL: `docker-compose -f docker/docker-compose.yml up -d`.
-7. Verify setup: Run `python tests/basic_test.py` to confirm Kafka/PG connectivity.
+5. Start Infrastructure: `docker-compose --env-file .env -f docker/docker-compose.yml up -d`.
+6. Verify setup: Run `python tests/basic_test.py` to confirm services are healthy.
 
 ### Project Structure
 
@@ -77,7 +76,7 @@ stl_metro_dat_api/
 1. Start containers: `docker-compose --env-file .env -f docker/docker-compose.yml up -d`.
    - The write-service app should start automatically with Docker. To run the write-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.write_service.app`.
    - The read-service app along with the front-end (excellence project) should also automatically start with Docker. To run the read-side app without Docker, go to the project's root directory in your terminal, and run `python -m src.read_service.app`.
-3. You can view the write-service app by going to `http://localhost:5000/` in your web browser.
+3. You can view the write-service app by going to `http://localhost:5005/` in your web browser.
 4. View Open API docs: Access Swagger UI at `http://localhost:5001/swagger`.
 5. The front-end (excellence project) should automatically start with Docker.
    - To view the front-end, go to `http://localhost:5001/index.htm` in your web browser.
@@ -90,7 +89,7 @@ This is also how ARPA (American Rescue Plan Act) data from the City of St. Louis
 is saved into the database:
 1. Start up the project's Docker containers.
 2. Do one of the following:
-   - Go to http://localhost:5000/json. The ARPA data will be saved into the database.
+   - Go to http://localhost:5005/json. The ARPA data will be saved into the database.
    You should see a webpage displaying what was saved 
    in the database along with the Kafka status. The PostgreSQL 
    application, if connected properly to the project, should also display the table data.

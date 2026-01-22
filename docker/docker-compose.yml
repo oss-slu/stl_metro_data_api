@@ -1,16 +1,15 @@
-version: '3.10'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-  
+    networks:
+      - kafka-net
+
   kafka:
     image: confluentinc/cp-kafka:7.4.0
-    depends_on: [ zookeeper ]
+    depends_on:
+      - zookeeper
     ports:
       - "9092:9092"
     environment:
@@ -20,42 +19,30 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    
-  kafka-init:
-    image: confluentinc/cp-kafka:7.6.0
-    depends_on:
-      - kafka
-    entrypoint: [ "/bin/bash", "-c" ]
-    command: |
-      "
-      echo 'Waiting for Kafka to be ready...';
-      sleep 10;
-      echo 'Creating topics: $raw-data-topic, $processed-data-topic';
-      for topic in $(echo $raw-data-topic, $processed-data-topic' | tr ',' '\n'); do
-        kafka-topics --create \
-          --bootstrap-server kafka:$9092 \
-          --replication-factor 1 \
-          --partitions 3 \
-          --topic $topic || true;
-      done
-      "
     networks:
       - kafka-net
-  
+
   postgres:
     image: postgres:14
     container_name: stl_postgres
     restart: always
+    # Added Healthcheck: Tells other services when DB is actually ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     environment:
-      POSTGRES_DB: stl_data
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
     ports:
       - "${PG_PORT}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ../config/pg_init.sql:/docker-entrypoint-initdb.d/pg_init.sql
-      
+    networks:
+      - kafka-net
+
   write_service:
     build:
       context: ../
@@ -63,7 +50,14 @@ services:
     env_file:
       - ../.env
     ports:
-      - "5000:5000"
+      - "5005:5005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - kafka-net
 
   read_service:
     build:
@@ -73,24 +67,32 @@ services:
       - ../.env
     ports:
       - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kafka-net
 
   pdf_consumer:
     build:
       context: ../
       dockerfile: docker/write_service/Dockerfile
-    command: ["python", "-m", "src.write_service.consumers.processed_consumer"]
+    # Runs the setup script first to create DB and Tables, then starts the consumer
+    command: >
+      sh -c "python src/database_setup.py && 
+             python -m src.write_service.consumers.pdf_consumer"
     depends_on:
-      - kafka
-      - postgres
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - ../.env
     environment:
       PG_HOST: postgres
-      PG_PORT: ${PG_PORT}
-      PG_DB: stl_data
-      PG_USER: postgres
-      PG_PASSWORD: ${PG_PASSWORD}
-      DATABASE_URL: "postgresql+psycopg2://postgres:${PG_PASSWORD}@postgres:${PG_PORT}/${PG_DB}"
-      KAFKA_BROKER: "kafka:9092"
-      PROCESSED_TOPIC: "processed-data-topic"
+      PG_PORT: 5432
+      DATABASE_URL: "postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}"
+      KAFKA_BROKER: "kafka:29092"
     networks:
       - kafka-net
 
